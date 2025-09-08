@@ -181,7 +181,6 @@ async function verifyDbHealthOnce() {
     );
     return { ok: false, status: res.status, message: body.message };
   })();
-
   return healthPromise;
 }
 
