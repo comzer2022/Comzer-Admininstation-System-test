@@ -147,7 +147,7 @@ app.get('/', (req, res) => {
   console.log('[HEALTHZ] ping received');
   res.send('OK');
 });
-// ── Listen（必ずファイル内で1回だけ）────────
+// ── Listen────────
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
  const HEALTHZ_URL = process.env.HEALTHZ_URL
    || (process.env.CZR_BASE
@@ -198,8 +198,8 @@ const today = (new Date()).toISOString().slice(0,10);
 const prompt = extractionPrompt.replace("__TODAY__", today);
 const DIPLOMAT_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview'; // ← 外務省アイコン URL
 const MINISTER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/qGWt4rftd9ygKdi/preview'; // ← 閣僚議会議員アイコン URL
-const EXAMINER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/NEsrzngYJEHZwTn/preview';
-const COMZER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/2DfeR3dTWdtCrgq/preview';
+const EXAMINER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/NEsrzngYJEHZwTn/preview'; // ← 入国審査担当官アイコン URL
+const COMZER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/2DfeR3dTWdtCrgq/preview'; // ← 国旗アイコン URL
   
 // 1. 環境変数からロールIDリストを取得（例: 閣僚・外交官どちらも）
 const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
@@ -228,6 +228,7 @@ const ROLE_CONFIG = {
       canDelete: [...MINISTER_ROLE_IDS], 
     }])
   ),
+  // ── 入国審査担当官ロールをまとめて
   ...Object.fromEntries(
     EXAMINER_ROLE_IDS.map(roleId => [ roleId, {
       embedName:   '入国審査担当官',
@@ -523,7 +524,7 @@ async function runInspection(content, session) {
     JSON.stringify(data.discord_ids, null, 2)
   );
 
-  // ④ エラー時は即リターン（開発者向けログを詳細に）
+  // ④ エラー時はリターン
   if (!res.ok) {
     console.error("[JoinerCheck][Error] APIエラー");
     console.error(`  URL:    ${API_URL}`);
@@ -571,7 +572,6 @@ async function runInspection(content, session) {
   // 承認時に内容を2段組で返す用にパースデータも一緒に返す
   return { approved: true, content: parsed };
 }
-
 
 // ── コンポーネント応答ハンドラ
 bot.on('interactionCreate', async interaction => {
