@@ -721,7 +721,7 @@ if (interaction.isButton() && interaction.customId.startsWith('editConfirm-')) {
     session.step = 'fix-version';
     const row = new ActionRowBuilder().addComponents(
       new SelectMenuBuilder()
-        .setCustomId(`version-${session.id}`)
+        .setCustomId(`fix-version-${session.id}`)
         .setPlaceholder('どちらのゲームエディションですか？')
         .addOptions([
           { label: 'Java', value: 'java' },
@@ -734,8 +734,18 @@ if (interaction.isButton() && interaction.customId.startsWith('editConfirm-')) {
     });
   } else {
     // no
-    session.logs.push(`[${nowJST()}] 修正取消`);
+  session.logs.push(`[${nowJST()}] 修正取消`);
   session.step = 'confirm';
+
+  const sd = session.data || {};
+  const version = sd.version || '未設定';
+  const mcid = sd.mcid || '未設定';
+  const nation = sd.nation || '未設定';
+  const period = sd.period || '未設定';
+  const companions = (sd.companions && sd.companions.length > 0)
+    ? sd.companions.join(', ')
+    : 'なし';
+  const joiner = sd.joiner || 'なし'
   const summary = [
     `ゲームバージョン: ${version}`,
     `MCID: ${mcid}`,
