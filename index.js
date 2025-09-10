@@ -718,25 +718,39 @@ if (interaction.isButton() && interaction.customId.startsWith('editConfirm-')) {
   if (action === 'yes') {
     // データを初期化して version 選択から再開
     session.data = {}; // 必要なら保持したいフィールドをここで残す
-    session.step = 'version';
-    const row = new ActionRowBuilder().addComponents(
-      new SelectMenuBuilder()
-        .setCustomId(`version-${session.id}`)
-        .setPlaceholder('どちらのゲームエディションですか？')
-        .addOptions([
-          { label: 'Java', value: 'java' },
-          { label: 'Bedrock', value: 'bedrock' },
-        ])
-    );
-    return interaction.update({
-      content: 'ゲームエディションを選択してください。',
-      components: [row]
-    });
+    session.step = 'start';
   } else {
     // no
     session.logs.push(`[${nowJST()}] 修正取消`);
-    session.step = 'joiner'
-  }
+      // セッション内のデータを安全に参照
+  const sd = session.data || {};
+  const version = sd.version || '未設定';
+  const mcid = sd.mcid || '未設定';
+  const nation = sd.nation || '未設定';
+  const period = sd.period || '未設定';
+  const companions = (sd.companions && sd.companions.length > 0) ? sd.companions.join(', ') : 'なし';
+  const joiner = sd.joiner || 'なし';
+    
+  session.step = 'confirm';
+  const summary = [
+    `ゲームバージョン: ${version}`,
+    `MCID: ${mcid}`,
+    `国籍: ${nation}`,
+    `期間: ${period}`,
+    `同行者: ${companions}`,
+    `合流者: ${joiner}`
+  ].join('\n');
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`confirm-${session.id}`).setLabel('確定').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`edit-${session.id}`).setLabel('修正').setStyle(ButtonStyle.Secondary)
+  );
+
+  return interaction.update({
+    content: `以下の内容で審査を実行しますか？\n${summary}`,
+    components: [row]
+  });
+}
 }
 
   if (interaction.isButton()) {
