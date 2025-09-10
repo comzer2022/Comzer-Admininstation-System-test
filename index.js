@@ -1100,13 +1100,12 @@ if (interaction.isChatInputCommand()) {
         session.logs.push(`[${nowJST()}] 版選択: ${interaction.values[0]}`);
         session.step = 'mcid';
         // 元のメッセージは編集してコンポーネントを消す（ユーザーが再選択できないように）
-        await interaction.update({ components: [] });
-        // その後、新しいメッセージを投稿
-        await interaction.followUp({
-          content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)'
-        });
-        return
-      }
+          await interaction.update({
+            content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)',
+            components: []
+          });
+          return;
+        }     
       }
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
