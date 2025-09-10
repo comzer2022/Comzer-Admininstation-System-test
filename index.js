@@ -718,10 +718,10 @@ if (interaction.isButton() && interaction.customId.startsWith('editConfirm-')) {
   if (action === 'yes') {
     // データを初期化して version 選択から再開
     session.data = {}; // 必要なら保持したいフィールドをここで残す
-    session.step = 'fix-version';
+    session.step = 'version';
     const row = new ActionRowBuilder().addComponents(
       new SelectMenuBuilder()
-        .setCustomId(`fix-version-${session.id}`)
+        .setCustomId(`version-${session.id}`)
         .setPlaceholder('どちらのゲームエディションですか？')
         .addOptions([
           { label: 'Java', value: 'java' },
@@ -1100,25 +1100,13 @@ if (interaction.isChatInputCommand()) {
         session.logs.push(`[${nowJST()}] 版選択: ${interaction.values[0]}`);
         session.step = 'mcid';
         // 元のメッセージは編集してコンポーネントを消す（ユーザーが再選択できないように）
-        await interaction.update({ components: [] });
-        // その後、新しいメッセージを投稿
-        await interaction.followUp({
-          content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)'
-        });
-        return
-      }
-        if (type === 'fix-version') {
-        session.data.version = interaction.values[0];
-        session.logs.push(`[${nowJST()}] 版選択: ${interaction.values[0]}`);
-        session.step = 'mcid';
-        // 元のメッセージは編集してコンポーネントを消す（ユーザーが再選択できないように）
         await interaction.message.delete();
         // その後、新しいメッセージを投稿
         await interaction.followUp({
           content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)'
         });
         return
-    }
+      }
       }
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
