@@ -718,19 +718,23 @@ if (interaction.isButton() && interaction.customId.startsWith('editConfirm-')) {
   if (action === 'yes') {
     // データを初期化して version 選択から再開
     session.data = {}; // 必要なら保持したいフィールドをここで残す
-    session.step = 'start';
+    session.step = 'fix-version';
+    const row = new ActionRowBuilder().addComponents(
+      new SelectMenuBuilder()
+        .setCustomId(`version-${session.id}`)
+        .setPlaceholder('どちらのゲームエディションですか？')
+        .addOptions([
+          { label: 'Java', value: 'java' },
+          { label: 'Bedrock', value: 'bedrock' },
+        ])
+    );
+    return interaction.update({
+      content: 'ゲームエディションを選択してください。',
+      components: [row]
+    });
   } else {
     // no
     session.logs.push(`[${nowJST()}] 修正取消`);
-      // セッション内のデータを安全に参照
-  const sd = session.data || {};
-  const version = sd.version || '未設定';
-  const mcid = sd.mcid || '未設定';
-  const nation = sd.nation || '未設定';
-  const period = sd.period || '未設定';
-  const companions = (sd.companions && sd.companions.length > 0) ? sd.companions.join(', ') : 'なし';
-  const joiner = sd.joiner || 'なし';
-    
   session.step = 'confirm';
   const summary = [
     `ゲームバージョン: ${version}`,
@@ -1093,6 +1097,18 @@ if (interaction.isChatInputCommand()) {
         });
         return
       }
+        if (type === 'fix-version') {
+        session.data.version = interaction.values[0];
+        session.logs.push(`[${nowJST()}] 版選択: ${interaction.values[0]}`);
+        session.step = 'mcid';
+        // 元のメッセージは編集してコンポーネントを消す（ユーザーが再選択できないように）
+        await interaction.update({ components: [] });
+        // その後、新しいメッセージを投稿
+        await interaction.followUp({
+          content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)'
+        });
+        return
+    }
       }
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
