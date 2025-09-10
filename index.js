@@ -702,6 +702,43 @@ bot.on('interactionCreate', async interaction => {
     }
     return;
   }
+
+  // -- 修正確認用ハンドラ --
+if (interaction.isButton() && interaction.customId.startsWith('editConfirm-')) {
+  const parts = interaction.customId.split('-');
+  const action = parts[1]; // 'yes' または 'no'
+  const sessionId = parts.slice(2).join('-');
+  const session = sessions.get(sessionId);
+  if (!session) {
+    return interaction.reply({ content: 'セッションが存在しないか期限切れです。', ephemeral: true });
+  }
+  session.lastAction = Date.now();
+  session.logs.push(`[${nowJST()}] 修正確認応答: ${interaction.user.id} → ${action}`);
+
+  if (action === 'yes') {
+    // データを初期化して version 選択から再開
+    session.data = {}; // 必要なら保持したいフィールドをここで残す
+    session.step = 'version';
+    const row = new ActionRowBuilder().addComponents(
+      new SelectMenuBuilder()
+        .setCustomId(`version-${session.id}`)
+        .setPlaceholder('どちらのゲームエディションですか？')
+        .addOptions([
+          { label: 'Java', value: 'java' },
+          { label: 'Bedrock', value: 'bedrock' },
+        ])
+    );
+    return interaction.update({
+      content: 'ゲームエディションを選択してください。',
+      components: [row]
+    });
+  } else {
+    // no
+    session.logs.push(`[${nowJST()}] 修正取消`);
+    session.step = 'joiner'
+  }
+}
+
   if (interaction.isButton()) {
     const id = interaction.customId ?? "";
     // 「プレフィックス-セッションID」という形式でないものはスキップ
@@ -994,10 +1031,24 @@ if (interaction.isChatInputCommand()) {
           }
         } // ←このifブロック、ここで終わり！
         if (type === 'edit') {
-          session.logs.push(`[${nowJST()}] 修正ボタン押下（フロー再開）`);
-          // 入力情報をクリアせず「version」選択から再開
-          session.step = 'version';
-        }
+  session.logs.push(`[${nowJST()}] 修正ボタン押下（確認表示）`);
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`editConfirm-yes-${session.id}`)
+      .setLabel('はい')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId(`editConfirm-no-${session.id}`)
+      .setLabel('いいえ')
+      .setStyle(ButtonStyle.Secondary)
+  );
+  await interaction.update({
+    content: '申請内容を修正しますか？（ゲームエディションの選択から再開します）',
+    components: [row]
+  });
+  return;
+}
+
       } // ←このif(interaction.isButton())ブロック、ここで終わり！
   
       // --- セレクトメニュー処理 ---
