@@ -718,10 +718,10 @@ if (interaction.isButton() && interaction.customId.startsWith('editConfirm-')) {
   if (action === 'yes') {
     // データを初期化して version 選択から再開
     session.data = {}; // 必要なら保持したいフィールドをここで残す
-    session.step = 'version';
+    session.step = 'fixversion';
     const row = new ActionRowBuilder().addComponents(
       new SelectMenuBuilder()
-        .setCustomId(`version-${session.id}`)
+        .setCustomId(`fixversion-${session.id}`)
         .setPlaceholder('どちらのゲームエディションですか？')
         .addOptions([
           { label: 'Java', value: 'java' },
@@ -1100,13 +1100,27 @@ if (interaction.isChatInputCommand()) {
         session.logs.push(`[${nowJST()}] 版選択: ${interaction.values[0]}`);
         session.step = 'mcid';
         // 元のメッセージは編集してコンポーネントを消す（ユーザーが再選択できないように）
-          await interaction.update({
-            content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)',
-            components: []
+        await interaction.update({ components: [] });
+          // その後、新しいメッセージを投稿
+          await interaction.followUp({
+            content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)'
           });
+          
+          return
+        }
+
+        if (type === 'fixversion') {
+        session.data.version = interaction.values[0];
+        session.logs.push(`[${nowJST()}] 版選択: ${interaction.values[0]}`);
+        session.step = 'mcid';
+        // 元のメッセージは編集してコンポーネントを消す（ユーザーが再選択できないように）
+        await interaction.update({
+          content: 'MCID又はゲームタグを入力してください。("BE_"を付ける必要はありません。)',
+          components: []
+        })
           return;
+        }
         }     
-      }
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
         content: "その操作にはまだ対応していません。",
