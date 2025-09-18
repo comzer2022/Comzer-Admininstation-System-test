@@ -144,7 +144,6 @@ app.post('/api/notify', (req, res) => {
 });
 // ヘルスチェック
 app.get('/', (req, res) => {
-  console.log('[HEALTHZ] ping received');
   res.send('OK');
 });
 // ── Listen────────
