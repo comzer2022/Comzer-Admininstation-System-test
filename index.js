@@ -95,14 +95,15 @@ app.post('/api/notify', (req, res) => {
   }
 
   const typeMap = {
+    registry_update: '国民登記情報修正申請',
     business_filing: '開業・廃業届',
-    political_org_create: '政治団体設立申請',
+    staff_appointment: '職員登用申請',
     donation_report: '寄付申告',
     party_membership: '入党・離党届',
     party_create_dissolve: '結党・解党届',
     citizen_recommend: '新規国民推薦届',
-    staff_appointment: '職員登用申請',
-    registry_update: '国民登記情報修正申請'
+    citizen_denunciation: '脱退申告',
+    anonymous_report: '匿名通報',
   };
 
   const rawRequestName = String(data.request_name ?? data.requestName ?? '').trim();
