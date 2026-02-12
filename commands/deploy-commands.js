@@ -4,6 +4,8 @@ import { data as rolepost }    from './embedPost.js';
 import { data as status }      from './status.js';
 import { data as shutdown }    from './shutdown.js';
 import { data as start }       from './start.js';
+import { data as info }        from './info.js';
+import { data as debug }       from './debug.js';
 import { commands as blacklistCommands } from '../blacklistCommands.js';
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -11,6 +13,7 @@ const { clientId, guildId } = config;
 
 (async () => {
   try {
+    // 一旦空にする処理（既存）
     await rest.put(
       Routes.applicationCommands(clientId),
       { body: [] }
@@ -22,6 +25,8 @@ const { clientId, guildId } = config;
       status.toJSON(),
       shutdown.toJSON(),
       start.toJSON(),
+      info.toJSON(),
+      debug.toJSON(),
       ...blacklistCommands.map(c => c.toJSON()),
     ];
 
