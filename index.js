@@ -4,11 +4,13 @@ import './logger.js';
 import { messagelog } from './logger.js';
 const config = require("./config.json");
 import * as embedPost from './commands/embedPost.js';
+import { data as infoData, execute as infoExecute } from './commands/info.js';
 import axios from "axios";
 import http from "node:http";
 import fetch from 'node-fetch';
 import { extractionPrompt } from "./prompts.js";
 import * as statusCommand from './commands/status.js';
+import * as debugCommand from './commands/debug.js';
 import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';
 import fs from "node:fs";
 import mysql from 'mysql2/promise';
@@ -46,7 +48,7 @@ const validateApiKey = (req) => {
 
 // Discord client 初期化
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences],
   partials: ['CHANNEL']
 });
 client.login(process.env.DISCORD_TOKEN);
@@ -54,30 +56,70 @@ client.login(process.env.DISCORD_TOKEN);
 // ── 通知キュー関連 ──
 const queue = [];
 let processing = false;
-
+/**
+ * キュー処理関数
+ * メッセージを1.5秒間隔で送信し、失敗時は詳細な理由をログ出力します。
+ */
 async function processQueue() {
   if (processing || queue.length === 0) return;
   processing = true;
 
   while (queue.length > 0) {
     const item = queue.shift();
+    const statusReport = {
+      requestId: item.requestId,
+      discordId: item.discord_id,
+      success: false,
+      detail: "不明なエラー",
+      errorCode: null
+    };
+
     try {
+      // 1. ユーザーの取得
       const user = await client.users.fetch(item.discord_id);
-      if (user) {
-        await user.send(item.message);
-      }
+      
+      // 2. メッセージ送信
+      await user.send(item.message);
+      
+      statusReport.success = true;
+      statusReport.detail = "送信成功";
+      console.log(`[SUCCESS] Request:${item.requestId} -> ${user.tag}`);
+
     } catch (err) {
-      console.error('DM送信エラー:', err);
+      // エラーオブジェクトから詳細を取得
+      statusReport.errorCode = err.code;
+      
+      if (err.code === 50007) {
+        // DM拒否設定（共通サーバー有無の簡易判定付き）
+        const hasCommonGuild = client.guilds.cache.some(g => g.members.cache.has(item.discord_id));
+        statusReport.detail = hasCommonGuild 
+          ? "失敗(50007): ユーザーがDMを閉じているか、Botがブロックされています。" 
+          : "失敗(50007): 共通サーバーにユーザーがいないため送信できません。";
+      } else if (err.code === 10013) {
+        statusReport.detail = "失敗(10013): ユーザーIDが正しくないか、存在しません。";
+      } else if (err.code === 50001) {
+        statusReport.detail = "失敗(50001): Botにメッセージ送信権限がありません。";
+      } else {
+        statusReport.detail = `失敗: ${err.message}`;
+      }
+
+      // ★ ここで必ずエラーログを出力する
+    console.error(`[FAILURE REPORT] RequestID: ${statusReport.requestId} | TargetID: ${statusReport.discordId} | Reason: ${statusReport.detail}`, err);
     }
+    
     await new Promise(res => setTimeout(res, 1500));
   }
 
   processing = false;
 }
 
-// ── /api/notify ハンドラ────────
+/**
+ * /api/notify エンドポイント
+ */
 app.post('/api/notify', (req, res) => {
+  console.log('--- APIリクエスト受信 ---');
   if (!validateApiKey(req)) {
+    console.error('APIキー認証失敗:', req.headers['x-api-key']); // ヘッダー名に合わせて調整
     return res.status(403).json({ error: 'Forbidden: Invalid API Key' });
   }
   const data = req.body || {};
@@ -86,14 +128,18 @@ app.post('/api/notify', (req, res) => {
   } catch (e) {
     console.log('通知受信: (non-serializable)');
   }
-
+  
+  // 2. 基本情報の抽出
   const discordIdRaw = data.discord_id ?? data.discordId ?? data.discord ?? '';
   const discordId = String(discordIdRaw).trim();
+  const requestId = data.request_id ?? data.requestId ?? '—';
+
   if (!discordId) {
     console.error('notify: missing discord_id', data);
     return res.status(400).json({ error: 'discord_id missing' });
   }
 
+  // 3. メッセージ内容の翻訳・構築
   const typeMap = {
     registry_update: '国民登記情報修正申請',
     business_filing: '開業・廃業届',
@@ -108,13 +154,13 @@ app.post('/api/notify', (req, res) => {
 
   const rawRequestName = String(data.request_name ?? data.requestName ?? '').trim();
   const translatedType = typeMap[rawRequestName] || rawRequestName || '—';
-  const requestId = data.request_id ?? data.requestId ?? '—';
   const createdAt = data.created_at ?? data.createdAt ?? '—';
   const department = data.department ?? data.dept ?? '—';
   const decisionEvent = data.decision_event ?? data.decisionEvent ?? '—';
   const decisionDatetime = data.decision_datetime ?? data.decisionDatetime ?? data.decision_event_datetime ?? '—';
   const notice = (data.notice ?? data.memo ?? '').toString().trim() || 'なし';
   const payloadContent = (data.request_content ?? data.requestContent ?? data.payload ?? '').toString().trim() || 'なし';
+
   const message = [
     '【重要】',
     '件名 : 審査結果通知のお知らせ',
@@ -134,20 +180,29 @@ app.post('/api/notify', (req, res) => {
     '担当者：（非開示）',
     `備考：${notice}`,
     '',
-   '-# 📢 このメッセージは、仮想国家コミュニティ《コムザール連邦共和国》が管理運営するコムザール行政システムによる自動通知です。',
+    '-# 📢 このメッセージは、仮想国家コミュニティ《コムザール連邦共和国》が管理運営するコムザール行政システムによる自動通知です。',
   ].join('\n');
 
-  queue.push({ discord_id: String(discordId), message });
+  // 4. キューへの追加
+  queue.push({ 
+    discord_id: discordId, 
+    message: message, 
+    requestId: requestId 
+  });
+
   console.log(`notify: queued message for ${discordId} (request ${requestId})`);
+  
   processQueue();
 
-  return res.json({ status: 'queued' });
+  return res.json({ 
+    status: 'queued', 
+    requestId: requestId,
+  });
 });
 
 app.get('/', (req, res) => {
   res.send('OK');
 });
-
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 
 const HEALTHZ_URL = process.env.HEALTHZ_URL
@@ -217,7 +272,7 @@ const ROLE_CONFIG = {
   ),
   ...Object.fromEntries(
     MINISTER_ROLE_IDS.map(roleId => [ roleId, {
-      embedName:   '閣僚議会議員',
+      embedName:   '閣僚会議議員',
       embedIcon:   MINISTER_ICON_URL,
       webhookName: 'コムザール連邦共和国 大統領府',
       webhookIcon: COMZER_ICON_URL,
@@ -307,6 +362,8 @@ bot.commands = new Collection([
   [embedPost.data.name,     embedPost],
   [statusCommand.data.name, statusCommand],
   [shutdownData.name,       { data: shutdownData, execute: shutdownExec }],
+  [infoData.name,           { data: infoData, execute: infoExecute }],
+  [debugCommand.data.name, debugCommand],
 ]);
 
 bot.once("ready", async () => {
@@ -646,20 +703,57 @@ bot.on('interactionCreate', async interaction => {
           content: `${applicantMention}`,
           embeds: [embed] 
         });
+        const publishEmbed = new EmbedBuilder()
+          .setTitle("【一時入国審査に係る入国者の公示】")
+          .addFields(fields) // ここでは本人通知用と同じ fields を使用していますが、必要に応じて調整してください
+          .setColor(0x27ae60)
+          .setDescription("以下の外国籍プレイヤーの入国が承認された為、以下の通り公示いたします。(外務省入管部)");
+
+        // debugCommand.isDebugMode の状態によって ID を切り替える
+        const publishChannelId = debugCommand.isDebugMode 
+          ? (config.debugChannelId || LOG_CHANNEL_ID) 
+          : (config.publishChannelId || config.logChannelId || LOG_CHANNEL_ID);
+
+        const publishChannel = bot.channels.cache.get(publishChannelId);
+
+        // 公示チャンネルへ送信
+        if (publishChannel?.isTextBased()) {
+          if (debugCommand.isDebugMode) {
+          }
+          await publishChannel.send({ embeds: [publishEmbed] });
+        } else {
+          console.error("公示用チャンネルが見つかりません。ID:", publishChannelId);
+        }
+
+        // セッションを終了
         return endSession(session.id, '承認');
-      }
+    }
     }
     return;
   }
 
   // rolepost選択メニュー
+
   if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
-    const roleId = interaction.values[0];
+    const selectedValue = interaction.values[0];
+    
+    // "diplomat-123456789" のような形式を分解
+    const [type, roleId] = selectedValue.includes('-') 
+      ? selectedValue.split('-') 
+      : [null, selectedValue];
+
+    // 分解した純粋な roleId を保存
     embedPost.setActive(interaction.channelId, interaction.user.id, roleId);
+
+    // ROLE_CONFIG から設定を取得（安全のため存在チェック付き）
+    const cfg = ROLE_CONFIG[roleId];
+    const modeName = cfg ? cfg.embedName : '役職';
+
     await interaction.update({
-      content: `役職発言モードを **ON** にしました。（${ROLE_CONFIG[roleId].embedName}）`,
+      content: `役職発言モードを **ON** にしました。（${modeName}）`,
       components: [],
-    });
+    }).catch(err => console.error("Update failed:", err));
+    
     return;
   }
 
@@ -1002,15 +1096,20 @@ bot.on('interactionCreate', async interaction => {
           .addFields(publishFields)
           .setColor(0x27ae60)
           .setDescription("以下の外国籍プレイヤーの入国が承認された為、以下の通り公示いたします。(外務省入管部)");
+        // debugCommand.isDebugMode の状態によって ID を切り替える
+        const publishChannelId = debugCommand.isDebugMode 
+          ? (config.debugChannelId || LOG_CHANNEL_ID) 
+          : (config.publishChannelId || config.logChannelId || LOG_CHANNEL_ID);
 
-        const publishChannelId = config.publishChannelId || config.logChannelId || LOG_CHANNEL_ID;
         const publishChannel = bot.channels.cache.get(publishChannelId);
+
         if (publishChannel?.isTextBased()) {
+          if (debugCommand.isDebugMode) {
+          }
           await publishChannel.send({ embeds: [publishEmbed] });
         } else {
           console.error("公示用チャンネルが見つかりません。ID:", publishChannelId);
         }
-
         return endSession(session.id, "承認");
       } else {
         let details = "";
