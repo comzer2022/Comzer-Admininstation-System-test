@@ -1,3 +1,4 @@
+// commands/deploy-commands.js
 import { REST, Routes } from 'discord.js';
 import config from '../config.json' assert { type: 'json' };
 import { data as rolepost }    from './embedPost.js';
@@ -6,7 +7,7 @@ import { data as shutdown }    from './shutdown.js';
 import { data as start }       from './start.js';
 import { data as info }        from './info.js';
 import { data as debug }       from './debug.js';
-import { commands as blacklistCommands } from '../blacklistCommands.js';
+import { commands as blacklistCommands } from './blacklist/index.js';
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 const { clientId, guildId } = config;
