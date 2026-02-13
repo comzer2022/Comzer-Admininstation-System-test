@@ -1,4 +1,3 @@
-// services/inspectionService.js
 import OpenAI from 'openai';
 import axios from 'axios';
 import { extractionPrompt } from '../prompts.js';
@@ -93,7 +92,7 @@ export async function runInspection(content, session) {
       if (await isBlacklistedPlayer(companionId)) {
         return {
           approved: false,
-          content: `同行者「${companionId}」は安全保障上の理由から入国を許可することができないため。`
+          content: `同行者「${companionId}」は安全保障上の理由から入国を許可することができないため、却下します。`
         };
       }
 

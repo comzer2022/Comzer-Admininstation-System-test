@@ -1,4 +1,3 @@
-// handlers/interactionHandler.js
 import {
   EmbedBuilder,
   ActionRowBuilder,

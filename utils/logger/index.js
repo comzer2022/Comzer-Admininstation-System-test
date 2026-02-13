@@ -1,6 +1,3 @@
-// utils/logger/index.js
-// ロガーシステム - メインエクスポート
-
 import { isWebhookEnabled } from './webhook.js';
 import { initializeHooks, originalLog, originalError } from './hooks.js';
 import { messagelog, logDebugInfo } from './messageLog.js';

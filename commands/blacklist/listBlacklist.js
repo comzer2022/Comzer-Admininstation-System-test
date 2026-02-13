@@ -1,4 +1,3 @@
-// commands/blacklist/listBlacklist.js
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { getActiveBlacklist } from '../../utils/blacklistManager.js';
 import { checkPermissions, unauthorizedReply } from './utils.js';

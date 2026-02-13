@@ -1,5 +1,3 @@
-// utils/helpers.js
-
 export function nowJST() {
   const now = new Date();
   return now.toLocaleString('ja-JP', {

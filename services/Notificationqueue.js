@@ -1,4 +1,3 @@
-// services/notificationQueue.js
 const queue = [];
 let processing = false;
 

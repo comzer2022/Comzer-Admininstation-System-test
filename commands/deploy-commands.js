@@ -1,4 +1,3 @@
-// commands/deploy-commands.js
 import { REST, Routes } from 'discord.js';
 import config from '../config.json' assert { type: 'json' };
 import { data as rolepost }    from './embedPost.js';

@@ -1,4 +1,3 @@
-// index.js - エントリーポイント
 import './utils/logger/index.js';
 import { Client, GatewayIntentBits } from 'discord.js';
 import express from 'express';
@@ -27,7 +26,6 @@ const client = new Client({
   partials: ['CHANNEL']
 });
 
-// ROLE_CONFIGをclientに追加
 client.ROLE_CONFIG = ROLE_CONFIG;
 
 // コマンド登録

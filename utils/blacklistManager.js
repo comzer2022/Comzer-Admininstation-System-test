@@ -1,4 +1,3 @@
-// utils/blacklistManager.js
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;

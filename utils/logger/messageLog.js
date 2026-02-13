@@ -1,4 +1,3 @@
-// utils/logger/hooks.js
 import { sendToWebhook } from './webhook.js';
 import { filterAndFormat, shouldExclude, cleanText } from './filters.js';
 

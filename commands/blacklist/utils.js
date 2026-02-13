@@ -1,6 +1,3 @@
-// commands/blacklist/utils.js
-// 共通の権限チェック関数
-
 export async function checkPermissions(interaction) {
   let userRoleIds = [];
 

@@ -1,4 +1,3 @@
-// commands/blacklist/removeCountry.js
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { removeBlacklistEntry } from '../../utils/blacklistManager.js';
 import { checkPermissions, unauthorizedReply } from './utils.js';

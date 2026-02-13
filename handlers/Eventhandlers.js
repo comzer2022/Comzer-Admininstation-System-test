@@ -1,4 +1,3 @@
-// handlers/eventHandlers.js
 import { ActivityType } from 'discord.js';
 import { handleInteraction } from './interactionHandler.js';
 import { handleMessage } from './messageHandler.js';

@@ -1,4 +1,3 @@
-// services/sessionManager.js
 import { nowJST } from '../utils/helpers.js';
 
 const sessions = new Map();

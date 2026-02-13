@@ -1,4 +1,3 @@
-// services/webhookManager.js
 import { WebhookClient } from 'discord.js';
 import { ROLE_CONFIG } from '../config/roleConfig.js';
 

@@ -1,5 +1,3 @@
-// utils/logger/filters.js
-
 /**
  * 除外キーワード
  * これらを含むログは Discord Webhook に送信されない

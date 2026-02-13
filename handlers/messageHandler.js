@@ -1,4 +1,3 @@
-// handlers/messageHandler.js
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import * as embedPost from '../commands/embedPost.js';
 import { getOrCreateHook } from '../services/webhookManager.js';

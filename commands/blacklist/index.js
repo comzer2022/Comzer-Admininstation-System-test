@@ -1,6 +1,3 @@
-// commands/blacklist/index.js
-// ブラックリストコマンドの統合ファイル
-
 import * as addCountry from './addCountry.js';
 import * as removeCountry from './removeCountry.js';
 import * as addPlayer from './addPlayer.js';

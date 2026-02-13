@@ -1,4 +1,3 @@
-// commands/deleteRolepost.js
 import { SlashCommandBuilder } from '@discordjs/builders';
 
 export const data = new SlashCommandBuilder()

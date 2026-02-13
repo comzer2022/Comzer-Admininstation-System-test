@@ -1,4 +1,3 @@
-// commands/blacklist/addCountry.js
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { addBlacklistEntry } from '../../utils/blacklistManager.js';
 import { checkPermissions, unauthorizedReply } from './utils.js';
