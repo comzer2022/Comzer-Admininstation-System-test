@@ -1,5 +1,5 @@
 // index.js - エントリーポイント
-import './logger.js';
+import './utils/logger/index.js';
 import { Client, GatewayIntentBits } from 'discord.js';
 import express from 'express';
 import bodyParser from 'body-parser';
