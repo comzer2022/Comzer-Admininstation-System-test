@@ -7,6 +7,7 @@ import { data as shutdown }    from './shutdown.js';
 import { data as start }       from './start.js';
 import { data as info }        from './info.js';
 import { data as debug }       from './debug.js';
+import { data as deleteRolepost } from './deleteRolepost.js';
 import { commands as blacklistCommands } from './blacklist/index.js';
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -28,6 +29,7 @@ const { clientId, guildId } = config;
       start.toJSON(),
       info.toJSON(),
       debug.toJSON(),
+      deleteRolepost.toJSON(),
       ...blacklistCommands.map(c => c.toJSON()),
     ];
 
