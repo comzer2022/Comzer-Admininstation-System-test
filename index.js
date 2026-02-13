@@ -12,7 +12,7 @@ import * as statusCommand from './commands/status.js';
 import * as debugCommand from './commands/debug.js';
 import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';
 import { data as infoData, execute as infoExecute } from './commands/info.js';
-import { commands as blacklistCommands } from './commands/blacklist/index.js';
+import { data as deleteRolepostData, execute as deleteRolepostExec } from './commands/deleteRolepost.js';
 
 // Discord client 初期化
 const client = new Client({
@@ -37,6 +37,7 @@ client.commands = new Map([
   [shutdownData.name, { data: shutdownData, execute: shutdownExec }],
   [infoData.name, { data: infoData, execute: infoExecute }],
   [debugCommand.data.name, debugCommand],
+  [deleteRolepostData.name, { data: deleteRolepostData, execute: deleteRolepostExec }],
 ]);
 
 // イベントハンドラー登録
