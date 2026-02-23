@@ -10,7 +10,7 @@ import { commands as blacklistCommands } from './blacklist/index.js';
 
 export const data = new SlashCommandBuilder()
   .setName('deploy')
-  .setDescription('スラッシュコマンドを再登録します（管理者専用）');
+  .setDescription('スラッシュコマンドを再登録します');
 
 export async function execute(interaction) {
   const allowedRoleId = process.env.DEPLOY_ROLE_ID;
