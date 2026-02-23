@@ -29,9 +29,9 @@ export async function handleInteraction(interaction) {
     return;
   }
 
-  // rolepost選択メニュー
+  // rolepost選択メニュー → embedPost に委譲
   if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
-    await handleRolepostSelect(interaction);
+    await embedPost.handleRolepostSelect(interaction);
     return;
   }
 
@@ -138,21 +138,6 @@ async function handleJoinerResponse(interaction) {
       return endSession(session.id, '承認', interaction.client);
     }
   }
-}
-
-async function handleRolepostSelect(interaction) {
-  const selectedValue = interaction.values[0];
-  const [type, roleId] = selectedValue.includes('-') ? selectedValue.split('-') : [null, selectedValue];
-
-  embedPost.setActive(interaction.channelId, interaction.user.id, roleId);
-
-  const cfg = interaction.client.ROLE_CONFIG[roleId];
-  const modeName = cfg ? cfg.embedName : '役職';
-
-  await interaction.update({
-    content: `役職発言モードを **ON** にしました。（${modeName}）`,
-    components: [],
-  }).catch(err => console.error("Update failed:", err));
 }
 
 async function handleVersionSelect(interaction) {
