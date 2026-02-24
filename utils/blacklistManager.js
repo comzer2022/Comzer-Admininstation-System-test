@@ -1,38 +1,58 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 
-const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+const SHEET_ID            = process.env.GOOGLE_SHEET_ID;
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
-const TAB_NAME = process.env.BLACKLIST_TAB_NAME || "blacklist(CAS連携)";
+const PRIVATE_KEY         = process.env.GOOGLE_PRIVATE_KEY;
+const TAB_NAME            = process.env.BLACKLIST_TAB_NAME || "blacklist(CAS連携)";
 
-let sheet;
+let sheet = null;
+// 初期化中の Promise を保持することで並列呼び出し時の二重初期化を防ぐ
+let initPromise = null;
 
 export async function initBlacklist() {
-  const doc = new GoogleSpreadsheet(SHEET_ID);
-  await doc.useServiceAccountAuth({
-    client_email: SERVICE_ACCOUNT_EMAIL,
-    private_key: PRIVATE_KEY.replace(/\\n/g, "\n"),
-  });
-  await doc.loadInfo();
-  sheet = doc.sheetsByTitle[TAB_NAME];
-  if (!sheet) throw new Error(`Tab '${TAB_NAME}' not found`);
+  // 既に初期化済みなら即返す
+  if (sheet) return;
+  // 初期化中なら同じ Promise を待つ（二重初期化防止）
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    const doc = new GoogleSpreadsheet(SHEET_ID);
+    await doc.useServiceAccountAuth({
+      client_email: SERVICE_ACCOUNT_EMAIL,
+      private_key: PRIVATE_KEY.replace(/\\n/g, "\n"),
+    });
+    await doc.loadInfo();
+    sheet = doc.sheetsByTitle[TAB_NAME];
+    if (!sheet) throw new Error(`Tab '${TAB_NAME}' not found`);
+  })();
+
+  try {
+    await initPromise;
+  } finally {
+    // 成功/失敗どちらでも initPromise をリセット
+    // 成功時は sheet が設定されているので次回は即返す
+    // 失敗時は次回の呼び出しで再試行できる
+    initPromise = null;
+  }
+}
+
+async function ensureSheet() {
+  if (!sheet) await initBlacklist();
 }
 
 export async function addBlacklistEntry(type, value, reason = "") {
-  if (!sheet) await initBlacklist();
+  await ensureSheet();
   const rows = await sheet.getRows();
   const today = new Date().toISOString().split("T")[0];
 
-  // Active重複チェック
-  let already = rows.find(r =>
+  const already = rows.find(r =>
     r['Type(Country/Player)'] === type &&
     r.value === value &&
     r.status === "Active"
   );
   if (already) return { result: "duplicate" };
 
-  // invalid → Activeへ再有効化
-  let invalidRow = rows.find(r =>
+  const invalidRow = rows.find(r =>
     r['Type(Country/Player)'] === type &&
     r.value === value &&
     r.status === "invalid"
@@ -40,24 +60,23 @@ export async function addBlacklistEntry(type, value, reason = "") {
   if (invalidRow) {
     invalidRow.status = "Active";
     invalidRow.reason = reason;
-    invalidRow.date = today;
+    invalidRow.date   = today;
     await invalidRow.save();
     return { result: "reactivated" };
   }
 
-  // 新規登録
   await sheet.addRow({
     'Type(Country/Player)': type,
-    'status': "Active",
+    status: "Active",
     value,
     reason,
-    date: today
+    date: today,
   });
   return { result: "added" };
 }
 
 export async function removeBlacklistEntry(type, value) {
-  if (!sheet) await initBlacklist();
+  await ensureSheet();
   const rows = await sheet.getRows();
   const row = rows.find(r =>
     r['Type(Country/Player)'] === type &&
@@ -67,13 +86,13 @@ export async function removeBlacklistEntry(type, value) {
   if (!row) return { result: "notfound" };
 
   row.status = "invalid";
-  row.date = new Date().toISOString().split("T")[0];
+  row.date   = new Date().toISOString().split("T")[0];
   await row.save();
   return { result: "invalidated" };
 }
 
 export async function getActiveBlacklist(type) {
-  if (!sheet) await initBlacklist();
+  await ensureSheet();
   const rows = await sheet.getRows();
   return rows.filter(r =>
     r['Type(Country/Player)'] === type &&
