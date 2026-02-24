@@ -35,7 +35,7 @@ export async function execute(interaction) {
   }
 
   // 2. 選択肢に基づいて true / false を設定
-  const choice = interaction.options.getString('status');
+  const choice = interaction.options.getString('mode');
   isDebugMode = (choice === 'on');
   
   const statusText = isDebugMode ? "ON" : "OFF";
