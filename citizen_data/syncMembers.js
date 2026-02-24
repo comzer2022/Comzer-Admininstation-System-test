@@ -1,29 +1,39 @@
-import { WebhookClient } from 'discord.js';
-import { ROLE_CONFIG } from '../config/roleConfig.js';
+import { upsertMember } from './czrApi.js';
 
-const webhooks = new Map();
+const GUILD_ID     = process.env.CZR_GUILD_ID || '1188411576483590194';
+// 環境変数から複数 ID を読み込む（カンマ区切り）
+const DIPLOMAT_IDS = (process.env.ROLLID_DIPLOMAT || '1188429176739479562')
+  .split(',').map(s => s.trim()).filter(Boolean);
 
-export async function getOrCreateHook(channel, roleId) {
-  const key = `${channel.id}:${roleId}`;
-  if (webhooks.has(key)) return webhooks.get(key);
+export function inferGroupFromRoles(roleIds) {
+  if (DIPLOMAT_IDS.some(id => roleIds.includes(id))) return 'diplomat';
+  return 'citizen';
+}
 
-  const whs = await channel.fetchWebhooks();
-  const webhookName = ROLE_CONFIG[roleId].webhookName;
-  const webhookIcon = ROLE_CONFIG[roleId].webhookIcon;
+export async function syncMember(m) {
+  const roles = [...m.roles.cache.keys()];
+  const payload = {
+    guild_id: GUILD_ID,
+    discord_id: m.id,
+    group: inferGroupFromRoles(roles),
+    roles,
+  };
+  const res = await upsertMember(payload);
+  console.log('[syncMember]', m.id, res.status);
+  return res;
+}
 
-  const existing = whs.find(w => w.name === webhookName);
-
-  let hook;
-  if (existing && existing.token) {
-    // Bot が作成した Webhook → token あり → WebhookClient として使用
-    hook = new WebhookClient({ id: existing.id, token: existing.token });
-  } else if (existing) {
-    // token が null（他ユーザー作成 or フォロワー Webhook）→ 新たに作成
-    hook = await channel.createWebhook({ name: webhookName, avatar: webhookIcon });
-  } else {
-    hook = await channel.createWebhook({ name: webhookName, avatar: webhookIcon });
+export async function fullSync(client, throttleMs = 1000) {
+  const g = await client.guilds.fetch(GUILD_ID);
+  const guild = await g.fetch();
+  const members = await guild.members.list({ limit: 1000 });
+  for (const m of members.values()) {
+    try {
+      await syncMember(m);
+    } catch (e) {
+      console.error('[fullSync] member', m.id, 'failed:', e.message);
+    }
+    const jitter = Math.floor(Math.random() * 250);
+    await new Promise(r => setTimeout(r, throttleMs + jitter));
   }
-
-  webhooks.set(key, hook);
-  return hook;
 }
