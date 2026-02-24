@@ -2,7 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 import * as embedPost from '../commands/embedPost.js';
 import { getOrCreateHook } from '../services/webhookManager.js';
 import { startSession, getAllSessions } from '../services/sessionManager.js';
-import { messagelog } from '../logger.js';
+import { messagelog } from '../utils/logger/index.js';
 import { nowJST } from '../utils/helpers.js';
 
 const TICKET_CAT = process.env.TICKET_CAT;
