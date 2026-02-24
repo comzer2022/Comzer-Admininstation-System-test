@@ -3,8 +3,8 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import express from 'express';
 import bodyParser from 'body-parser';
 import { ROLE_CONFIG } from './config/roleConfig.js';
-import { setupNotificationAPI } from './services/notificationQueue.js';
-import { registerEventHandlers } from './handlers/eventHandlers.js';
+import { setupNotificationAPI } from './services/notificationqueue.js';  // ← 小文字に修正
+import { registerEventHandlers } from './handlers/eventhandlers.js';      // ← 小文字に修正
 import { initBlacklist } from './utils/blacklistManager.js';
 import * as embedPost from './commands/embedPost.js';
 import * as statusCommand from './commands/status.js';
@@ -15,7 +15,6 @@ import { data as infoData, execute as infoExecute } from './commands/info.js';
 import { data as deleteRolepostData, execute as deleteRolepostExec } from './commands/deleteRolepost.js';
 import * as deployCommand from './commands/deploy.js';
 
-// Discord client 初期化
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -30,7 +29,6 @@ const client = new Client({
 
 client.ROLE_CONFIG = ROLE_CONFIG;
 
-// コマンド登録
 client.commands = new Map([
   [embedPost.data.name,          embedPost],
   [statusCommand.data.name,      statusCommand],
@@ -42,29 +40,26 @@ client.commands = new Map([
   [deployCommand.data.name,      deployCommand],
 ]);
 
-// イベントハンドラー登録
 registerEventHandlers(client);
 
-// Express API セットアップ
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
-// 通知API設定
 setupNotificationAPI(app, client);
 
-// ヘルスチェック
-app.get('/', (req, res) => {
-  res.send('OK');
-});
+app.get('/', (req, res) => res.send('OK'));
 
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 
-// Bot起動
+// initBlacklist を ready イベントで実行（eventHandlers.js の ready と共存）
 client.once('ready', async () => {
-  console.log(`Logged in as ${client.user.tag}`);
-  await initBlacklist();
-  console.log('✅ Bot ready & blacklist initialized');
+  try {
+    await initBlacklist();
+    console.log('✅ Blacklist initialized');
+  } catch (e) {
+    console.error('[initBlacklist] 初期化失敗:', e);
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
