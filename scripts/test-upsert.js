@@ -1,4 +1,4 @@
-import { upsertMember } from '../src/citizen_data/czrApi.js';
+import { upsertMember } from '../citizen_data/czrApi.js';  // ← src/ を削除
 
 const id = process.argv[2];
 if (!id) { console.error('usage: node scripts/test-upsert.js <discord_id>'); process.exit(1); }
