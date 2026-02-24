@@ -2,14 +2,18 @@ import { ActivityType } from 'discord.js';
 import { handleInteraction } from './interactionHandler.js';
 import { handleMessage } from './messageHandler.js';
 import { syncMember, fullSync } from '../citizen_data/syncMembers.js';
+import { setBotClient } from '../services/sessionManager.js';
 import * as statusCommand from '../commands/status.js';
 
 export function registerEventHandlers(client) {
-  // Bot起動時
+  // ready 時に sessionManager へ client を渡す（タイムアウト endSession 用）
   client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}`);
 
-    // 初回の完全同期
+    // sessionManager に bot client を登録（タイムアウト時の endSession に必要）
+    setBotClient(client);
+
+    // 初回完全同期
     try {
       await fullSync(client, Number(process.env.CZR_THROTTLE_MS || 700));
     } catch (e) {
@@ -22,32 +26,26 @@ export function registerEventHandlers(client) {
       fullSync(client).catch(err => console.error('[fullSync] 定期同期失敗:', err));
     }, interval);
 
-    // ステータスメッセージ設定
     updateBotStatus(client);
 
-    // 定期的なステータスメッセージ更新
     setInterval(() => {
       updateBotStatus(client);
       statusCommand.updateLastSelfCheck();
     }, 30 * 60 * 1000);
   });
 
-  // インタラクション処理
   client.on('interactionCreate', async (interaction) => {
     await handleInteraction(interaction);
   });
 
-  // メッセージ処理
   client.on('messageCreate', async (message) => {
     await handleMessage(message, client);
   });
 
-  // メンバー追加時
   client.on('guildMemberAdd', (member) => {
     syncMember(member).catch(e => console.error('[guildMemberAdd]', e.message));
   });
 
-  // メンバー更新時
   client.on('guildMemberUpdate', (oldMember, newMember) => {
     syncMember(newMember).catch(e => console.error('[guildMemberUpdate]', e.message));
   });
