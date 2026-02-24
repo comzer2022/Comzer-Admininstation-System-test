@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { SlashCommandBuilder } from 'discord.js';
 
 export const data = new SlashCommandBuilder()
   .setName("delete_rolepost")
@@ -7,35 +7,52 @@ export const data = new SlashCommandBuilder()
     o.setName("message_id").setDescription("削除するメッセージのID").setRequired(true)
   );
 
+// embedPost.js の roleGroups と同じ定義
+const ROLE_GROUPS = [
+  { envKey: 'ROLLID_MINISTER',   mode: 'minister', label: '閣僚会議議員' },
+  { envKey: 'ROLLID_DIPLOMAT',   mode: 'diplomat', label: '外交官(外務省 総合外務部職員)' },
+  { envKey: 'EXAMINER_ROLE_IDS', mode: 'examiner', label: '入国審査担当官' },
+];
+
+function getRoleIdsByMode(mode) {
+  const group = ROLE_GROUPS.find(g => g.mode === mode);
+  if (!group) return [];
+  return (process.env[group.envKey] || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function getModeFromRoleId(roleId) {
+  for (const { envKey, mode } of ROLE_GROUPS) {
+    const ids = (process.env[envKey] || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (ids.includes(roleId)) return mode;
+  }
+  return null;
+}
+
 export async function execute(interaction) {
-  // 権限チェック
+  // ロールID取得
   let userRoleIds = [];
 
-  if (interaction.guild) {
+  if (interaction.guildId) {
     userRoleIds = interaction.member.roles.cache.map(r => String(r.id));
   } else {
     const refGuildId = "1188411576483590194";
-    if (!refGuildId) {
-      throw new Error("環境変数 REFERENCE_GUILD_ID が設定されていません");
-    }
     const guild = await interaction.client.guilds.fetch(refGuildId);
     const member = await guild.members.fetch(interaction.user.id);
     userRoleIds = member.roles.cache.map(r => String(r.id));
   }
 
-  const ALLOWED_ROLE_IDS = [
-    ...(process.env.ROLLID_MINISTER ? process.env.ROLLID_MINISTER.split(',') : []),
-    ...(process.env.ROLLID_DIPLOMAT ? process.env.ROLLID_DIPLOMAT.split(',') : []),
-  ].map(x => x.trim()).filter(Boolean);
-
-  const hasPermission = ALLOWED_ROLE_IDS.some(roleId => userRoleIds.includes(roleId));
+  // いずれかのモードのロールを持っているか
+  const allAllowedIds = ROLE_GROUPS.flatMap(({ envKey }) =>
+    (process.env[envKey] || '').split(',').map(s => s.trim()).filter(Boolean)
+  );
+  const hasPermission = allAllowedIds.some(id => userRoleIds.includes(id));
 
   if (!hasPermission) {
     console.trace("権限エラー: delete_rolepost");
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
         content: "君はステージが低い。君のコマンドを受け付けると君のカルマが私の中に入って来て私が苦しくなる。(権限エラー)",
-        ephemeral: true
+        ephemeral: true,
       });
     }
     return;
@@ -45,25 +62,7 @@ export async function execute(interaction) {
 
   const messageId = interaction.options.getString('message_id', true);
   const channel = interaction.channel;
-  const member = interaction.member;
   const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
-
-  const diplomatRoles = (process.env.ROLLID_DIPLOMAT || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const ministerRoles = (process.env.ROLLID_MINISTER || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const examinerRoles = (process.env.EXAMINER_ROLE_IDS || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const executorRoleIds = member.roles.cache.map(r => r.id);
 
   try {
     const msg = await channel.messages.fetch(messageId);
@@ -76,8 +75,7 @@ export async function execute(interaction) {
     }
 
     // 2) Embed の author.name から roleId を逆引き
-    const embed = msg.embeds[0];
-    const authorName = embed?.author?.name;
+    const authorName = msg.embeds[0]?.author?.name;
     if (!authorName) {
       return await interaction.editReply({
         content: "このメッセージは役職発言ではないようです。",
@@ -85,7 +83,7 @@ export async function execute(interaction) {
     }
 
     const roleIdOfEmbed = Object.entries(ROLE_CONFIG)
-      .find(([rid, cfg]) => cfg.embedName === authorName)
+      .find(([, cfg]) => cfg.embedName === authorName)
       ?.[0];
 
     if (!roleIdOfEmbed) {
@@ -94,45 +92,26 @@ export async function execute(interaction) {
       });
     }
 
-    // 3) モード別の権限チェック
-    let mode = null;
-    if (ministerRoles.includes(roleIdOfEmbed)) {
-      mode = 'minister';
-    } else if (diplomatRoles.includes(roleIdOfEmbed)) {
-      mode = 'diplomat';
-    } else if (examinerRoles.includes(roleIdOfEmbed)) {
-      mode = 'examiner';
-    }
-
+    // 3) Embed の roleId からモード判定
+    const mode = getModeFromRoleId(roleIdOfEmbed);
     if (!mode) {
       return await interaction.editReply({
         content: "この発言のモードが特定できません。",
       });
     }
 
-    const hasDeletePermission = (
-      mode === 'minister'
-        ? ministerRoles.some(r => executorRoleIds.includes(r))
-        : mode === 'diplomat'
-          ? diplomatRoles.some(r => executorRoleIds.includes(r))
-          : mode === 'examiner'
-            ? examinerRoles.some(r => executorRoleIds.includes(r))
-            : false
-    );
+    // 4) 同じモードのロールを持っているか確認
+    const allowedIds = getRoleIdsByMode(mode);
+    const hasDeletePermission = allowedIds.some(id => userRoleIds.includes(id));
 
     if (!hasDeletePermission) {
-      const modeName = mode === 'minister'
-        ? '閣僚会議議員'
-        : mode === 'diplomat'
-          ? '外交官(外務省 総合外務部職員)'
-          : '入国審査担当官';
-
+      const label = ROLE_GROUPS.find(g => g.mode === mode)?.label ?? mode;
       return await interaction.editReply({
-        content: `この${modeName}の発言を削除する権限がありません。`,
+        content: `この${label}の発言を削除する権限がありません。`,
       });
     }
 
-    // 4) 削除実行
+    // 5) 削除実行
     await msg.delete();
     return await interaction.editReply({
       content: "役職発言を削除しました。",
