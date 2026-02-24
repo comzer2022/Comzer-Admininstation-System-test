@@ -12,12 +12,17 @@ export async function getOrCreateHook(channel, roleId) {
   const webhookIcon = ROLE_CONFIG[roleId].webhookIcon;
 
   const existing = whs.find(w => w.name === webhookName);
-  const hook = existing
-    ? new WebhookClient({ id: existing.id, token: existing.token })
-    : await channel.createWebhook({
-      name: webhookName,
-      avatar: webhookIcon,
-    });
+
+  let hook;
+  if (existing && existing.token) {
+    // Bot が作成した Webhook → token あり → WebhookClient として使用
+    hook = new WebhookClient({ id: existing.id, token: existing.token });
+  } else if (existing) {
+    // token が null（他ユーザー作成 or フォロワー Webhook）→ 新たに作成
+    hook = await channel.createWebhook({ name: webhookName, avatar: webhookIcon });
+  } else {
+    hook = await channel.createWebhook({ name: webhookName, avatar: webhookIcon });
+  }
 
   webhooks.set(key, hook);
   return hook;
