@@ -1,6 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import * as embedPost from '../commands/embedPost.js';
-import { getOrCreateHook } from '../services/webhookManager.js';
+import { getOrCreateHook } from '../services/webhookmanager.js';  // ← 小文字に修正
 import { startSession, getAllSessions } from '../services/sessionManager.js';
 import { messagelog } from '../utils/logger/index.js';
 import { nowJST } from '../utils/helpers.js';
@@ -13,13 +13,11 @@ export async function handleMessage(message, client) {
 
   messagelog(message, TICKET_CAT, client);
 
-  // 役職発言モード処理
   if (embedPost.isActive(message.channel.id, message.author.id)) {
     await handleRolepostMessage(message, client);
     return;
   }
 
-  // 管理レポート
   if (message.content.trim() === ADMIN_KEYWORD) {
     const sessions = getAllSessions();
     const reportEmbed = new EmbedBuilder()
@@ -28,7 +26,6 @@ export async function handleMessage(message, client) {
     return message.channel.send({ embeds: [reportEmbed] });
   }
 
-  // 入国審査開始トリガー
   if (
     message.mentions.has(client.user) &&
     String(message.channel.parentId) === String(TICKET_CAT) &&
