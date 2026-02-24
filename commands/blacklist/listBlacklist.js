@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { SlashCommandBuilder } from 'discord.js';  // ← @discordjs/builders から変更
 import { getActiveBlacklist } from '../../utils/blacklistManager.js';
 import { checkPermissions, unauthorizedReply } from './utils.js';
 
@@ -8,7 +8,6 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   const hasPermission = await checkPermissions(interaction);
-
   if (!hasPermission) {
     console.trace("権限エラー: list_blacklist");
     if (!interaction.replied && !interaction.deferred) {
