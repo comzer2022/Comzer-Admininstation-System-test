@@ -14,7 +14,7 @@ import { handleCommands } from '../commands/blacklist/index.js';
 import { startSession, endSession, getSession, updateSessionLastAction } from '../services/sessionManager.js';
 import { runInspection } from '../services/inspectionService.js';
 import { nowJST } from '../utils/helpers.js';
-import config from '../config.json' assert { type: 'json' };
+import config from '../config/config.json' assert { type: 'json' };
 
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
 
