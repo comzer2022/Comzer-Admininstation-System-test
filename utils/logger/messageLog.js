@@ -1,88 +1,38 @@
-import { sendToWebhook } from './webhook.js';
-import { filterAndFormat, shouldExclude, cleanText } from './filters.js';
-
-// 元の console.log / console.error を保存
-export const originalLog = console.log;
-export const originalError = console.error;
-
 /**
- * エラーオブジェクトを文字列に変換
- * @param {Error} error - エラーオブジェクト
- * @returns {string} 変換された文字列
+ * @param {import('discord.js').Message} message
+ * @param {string|undefined} ticketCat - TICKET_CAT 環境変数の値
+ * @param {import('discord.js').Client} client
  */
-function errorToString(error) {
-  return error.stack || error.message;
+export function messagelog(message, ticketCat, client) {
+  const channel     = message.channel;
+  const channelId   = message.channelId   ?? 'unknown';
+  const channelName = channel?.name        ?? 'unknown';
+  const parentId    = channel?.parentId    ?? 'none';
+  const authorId    = message.author?.id   ?? 'unknown';
+
+  // mentions.has() の結果を含めることで EXCLUDE_KEYWORDS に引っかかりローカルのみに残る
+  const mentionsBot = client?.user ? message.mentions.has(client.user) : false;
+
+  // content: を含む出力 → Webhook 除外キーワードに該当しローカルログのみに残る
+  const contentPreview = message.content?.slice(0, 80) ?? '';
+
+  console.log(
+    `[MSG] channelId:${channelId} channelName:${channelName} ` +
+    `parentId:${parentId} authorId:${authorId} ` +
+    `TICKET_CAT:${ticketCat ?? 'none'} mentions.has(bot):${mentionsBot} ` +
+    `content:${contentPreview}`
+  );
 }
-
-/**
- * オブジェクトを文字列に変換
- * @param {*} obj - 変換するオブジェクト
- * @returns {string} 変換された文字列
- */
-function objectToString(obj) {
-  try {
-    return JSON.stringify(obj, null, 2);
-  } catch {
-    return String(obj);
-  }
-}
-
-/**
- * 引数を文字列に変換
- * @param {*} arg - 変換する引数
- * @returns {string} 変換された文字列
- */
-function argToString(arg) {
-  if (arg instanceof Error) {
-    return errorToString(arg);
-  }
-  if (typeof arg === 'object' && arg !== null) {
-    return objectToString(arg);
-  }
-  return String(arg);
-}
-
-/**
- * console.log をフック
- */
-export function hookConsoleLog() {
-  console.log = (...args) => {
-    // 元の console.log を実行
-    originalLog(...args);
-
-    // フィルタリングして Webhook に送信
-    const text = filterAndFormat(args);
-    if (text) {
-      sendToWebhook(text);
+export function logDebugInfo(label, ...args) {
+  const parts = args.map(a => {
+    if (a == null)             return String(a);
+    if (a instanceof Error)    return a.stack ?? a.message;
+    if (typeof a === 'object') {
+      try { return JSON.stringify(a, null, 2); } catch { return String(a); }
     }
-  };
-}
+    return String(a);
+  });
 
-/**
- * console.error をフック
- */
-export function hookConsoleError() {
-  console.error = (...args) => {
-    // 元の console.error を実行
-    originalError(...args);
-
-    // 引数を文字列に変換
-    const raw = args.map(argToString).join('\n');
-
-    // フィルタリングして送信
-    if (!shouldExclude(raw)) {
-      const cleaned = cleanText(raw);
-      if (cleaned) {
-        sendToWebhook(cleaned);
-      }
-    }
-  };
-}
-
-/**
- * すべてのコンソールフックを初期化
- */
-export function initializeHooks() {
-  hookConsoleLog();
-  hookConsoleError();
+  // （型： を含めることで EXCLUDE_KEYWORDS に引っかかりローカルログのみに残る）
+  console.log(`[DEBUG] ${label} （型：${typeof args[0]}）`, ...parts);
 }
