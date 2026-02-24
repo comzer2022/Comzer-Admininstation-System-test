@@ -19,7 +19,12 @@ import config from '../config/config.json' assert { type: 'json' };
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
 
 export async function handleInteraction(interaction) {
-  if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isChatInputCommand() && !interaction.isModalSubmit()) {
+  if (
+    !interaction.isButton() &&
+    !interaction.isStringSelectMenu() &&
+    !interaction.isChatInputCommand() &&
+    !interaction.isModalSubmit()
+  ) {
     return;
   }
 
@@ -29,7 +34,7 @@ export async function handleInteraction(interaction) {
     return;
   }
 
-  // rolepost選択メニュー → embedPost に委譲
+  // rolepost 選択メニュー → embedPost に委譲
   if (interaction.isStringSelectMenu() && interaction.customId.startsWith('rolepost-choose-')) {
     await embedPost.handleRolepostSelect(interaction);
     return;
@@ -48,44 +53,34 @@ export async function handleInteraction(interaction) {
       await cmd.execute(interaction);
       return;
     }
+    // 未登録コマンド → blacklist にフォールスルー
   }
 
-  // blacklistコマンド処理
+  // blacklist コマンド処理
   const handled = await handleCommands(interaction);
   if (handled) return;
 
   try {
-    // ボタン処理
     if (interaction.isButton()) {
       await handleButtonInteraction(interaction);
       return;
     }
 
-    // Modal送信処理
     if (interaction.isModalSubmit() && interaction.customId.startsWith('immigration-modal-')) {
       await handleModalSubmit(interaction);
       return;
     }
 
     if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({
-        content: "その操作にはまだ対応していません。",
-        ephemeral: true,
-      });
+      await interaction.reply({ content: "その操作にはまだ対応していません。", ephemeral: true });
     }
   } catch (error) {
     console.error("❌ interactionCreate handler error:", error);
     try {
       if (interaction.deferred || interaction.replied) {
-        await interaction.followUp({
-          content: "エラーが発生しました。",
-          flags: 1 << 6,
-        });
+        await interaction.followUp({ content: "エラーが発生しました。", flags: 1 << 6 });
       } else {
-        await interaction.reply({
-          content: "エラーが発生しました。",
-          flags: 1 << 6,
-        });
+        await interaction.reply({ content: "エラーが発生しました。", flags: 1 << 6 });
       }
     } catch (notifyErr) {
       console.error("❌ Failed to send error notification:", notifyErr);
@@ -93,6 +88,9 @@ export async function handleInteraction(interaction) {
   }
 }
 
+// ─────────────────────────────────────────────
+// 合流者確認ボタン応答
+// ─────────────────────────────────────────────
 async function handleJoinerResponse(interaction) {
   const parts = interaction.customId.split('-');
   const answer = parts[1];
@@ -112,34 +110,38 @@ async function handleJoinerResponse(interaction) {
   const expectCount = (session.data.joinerDiscordIds || []).length;
   const gotCount = Object.keys(session.data.joinerResponses).length;
 
-  if (gotCount === expectCount) {
-    const anyNo = Object.values(session.data.joinerResponses).includes('no');
-    const targetChannel = await interaction.client.channels.fetch(session.channelId);
+  // joinerDiscordIds が未設定または 0 件の場合は待機継続（誤作動防止）
+  if (expectCount === 0 || gotCount < expectCount) return;
 
-    if (!targetChannel?.isTextBased()) {
-      return endSession(session.id, anyNo ? '却下' : '承認', interaction.client);
-    }
+  const anyNo = Object.values(session.data.joinerResponses).includes('no');
+  const targetChannel = await interaction.client.channels.fetch(session.channelId).catch(() => null);
 
-    const applicantMention = session.data.applicantDiscordId ? `<@${session.data.applicantDiscordId}> ` : '';
+  if (!targetChannel?.isTextBased()) {
+    return endSession(session.id, anyNo ? '却下' : '承認', interaction.client);
+  }
 
-    if (anyNo) {
-      const parsed = session.data.parsed;
-      const embed = createRejectionEmbed(parsed, "合流者が申請を承認しませんでした。合流者は正しいですか?");
-      await targetChannel.send({ content: applicantMention, embeds: [embed] });
-      return endSession(session.id, '却下', interaction.client);
-    } else {
-      const parsed = session.data.parsed;
-      const embed = createApprovalEmbed(parsed);
-      await targetChannel.send({ content: applicantMention, embeds: [embed] });
+  const applicantMention = session.data.applicantDiscordId
+    ? `<@${session.data.applicantDiscordId}> `
+    : '';
 
-      // 公示チャンネルへ送信
-      await publishApproval(parsed, interaction.client);
-
-      return endSession(session.id, '承認', interaction.client);
-    }
+  if (anyNo) {
+    const embed = createRejectionEmbed(
+      session.data.parsed ?? {},
+      "合流者が申請を承認しませんでした。合流者は正しいですか?"
+    );
+    await targetChannel.send({ content: applicantMention, embeds: [embed] });
+    return endSession(session.id, '却下', interaction.client);
+  } else {
+    const embed = createApprovalEmbed(session.data.parsed);
+    await targetChannel.send({ content: applicantMention, embeds: [embed] });
+    await publishApproval(session.data.parsed, interaction.client);
+    return endSession(session.id, '承認', interaction.client);
   }
 }
 
+// ─────────────────────────────────────────────
+// ゲームエディション選択 → Modal 表示
+// ─────────────────────────────────────────────
 async function handleVersionSelect(interaction) {
   const sessionId = interaction.customId.replace('version-select-', '');
   const session = getSession(sessionId);
@@ -149,69 +151,48 @@ async function handleVersionSelect(interaction) {
   }
 
   updateSessionLastAction(sessionId);
-  const selectedVersion = interaction.values[0];
-  session.data.version = selectedVersion;
-  session.logs.push(`[${nowJST()}] ゲームエディション選択: ${selectedVersion}`);
+  session.data.version = interaction.values[0];
+  session.logs.push(`[${nowJST()}] ゲームエディション選択: ${session.data.version}`);
 
-  // Modal作成
   const modal = new ModalBuilder()
     .setCustomId(`immigration-modal-${session.id}`)
     .setTitle('一時入国審査申請フォーム');
 
-  const mcidInput = new TextInputBuilder()
-    .setCustomId('mcid')
-    .setLabel('MCID / ゲームタグ')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('BE_を付ける必要はありません')
-    .setRequired(true)
-    .setMaxLength(50);
-
-  const nationInput = new TextInputBuilder()
-    .setCustomId('nation')
-    .setLabel('国籍')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('例: 日本')
-    .setRequired(true)
-    .setMaxLength(100);
-
-  const periodInput = new TextInputBuilder()
-    .setCustomId('period')
-    .setLabel('入国期間と目的')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('例: 観光で10日間')
-    .setRequired(true)
-    .setMaxLength(200);
-
-  const companionsInput = new TextInputBuilder()
-    .setCustomId('companions')
-    .setLabel('同行者(いなければ空欄)')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('例: user1,BE_user2')
-    .setRequired(false)
-    .setMaxLength(300);
-
-  const joinersInput = new TextInputBuilder()
-    .setCustomId('joiners')
-    .setLabel('合流者(いなければ空欄)')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('例: citizen123, 12345678901234, BE_citizen234 ')
-    .setRequired(false)
-    .setMaxLength(300);
-
-  const rows = [
-    new ActionRowBuilder().addComponents(mcidInput),
-    new ActionRowBuilder().addComponents(nationInput),
-    new ActionRowBuilder().addComponents(periodInput),
-    new ActionRowBuilder().addComponents(companionsInput),
-    new ActionRowBuilder().addComponents(joinersInput),
-  ];
-
-  modal.addComponents(...rows);
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder().setCustomId('mcid').setLabel('MCID / ゲームタグ')
+        .setStyle(TextInputStyle.Short).setPlaceholder('BE_を付ける必要はありません')
+        .setRequired(true).setMaxLength(50)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder().setCustomId('nation').setLabel('国籍')
+        .setStyle(TextInputStyle.Short).setPlaceholder('例: 日本')
+        .setRequired(true).setMaxLength(100)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder().setCustomId('period').setLabel('入国期間と目的')
+        .setStyle(TextInputStyle.Short).setPlaceholder('例: 観光で10日間')
+        .setRequired(true).setMaxLength(200)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder().setCustomId('companions').setLabel('同行者(いなければ空欄)')
+        .setStyle(TextInputStyle.Short).setPlaceholder('例: user1,BE_user2')
+        .setRequired(false).setMaxLength(300)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder().setCustomId('joiners').setLabel('合流者(いなければ空欄)')
+        .setStyle(TextInputStyle.Short).setPlaceholder('例: citizen123, 12345678901234, BE_citizen234')
+        .setRequired(false).setMaxLength(300)
+    ),
+  );
 
   await interaction.showModal(modal);
   session.step = 'modal_submitted';
 }
 
+// ─────────────────────────────────────────────
+// ボタン処理（start / cancel）
+// ─────────────────────────────────────────────
 async function handleButtonInteraction(interaction) {
   const parts = interaction.customId.split('-');
   const type = parts[0];
@@ -233,19 +214,17 @@ async function handleButtonInteraction(interaction) {
     session.step = 'select_version';
 
     const row = new ActionRowBuilder().addComponents(
-      new SelectMenuBuilder()
+      // ✅ StringSelectMenuBuilder（旧 SelectMenuBuilder は v14 で廃止）
+      new StringSelectMenuBuilder()
         .setCustomId(`version-select-${session.id}`)
         .setPlaceholder('ゲームエディションを選択してください')
         .addOptions([
-          { label: 'Java Edition', value: 'java', description: 'Java版Minecraft' },
+          { label: 'Java Edition',    value: 'java',    description: 'Java版Minecraft' },
           { label: 'Bedrock Edition', value: 'bedrock', description: '統合版Minecraft' },
         ])
     );
 
-    await interaction.update({
-      content: 'ゲームエディションを選択してください。',
-      components: [row]
-    });
+    await interaction.update({ content: 'ゲームエディションを選択してください。', components: [row] });
     return;
   }
 
@@ -254,8 +233,16 @@ async function handleButtonInteraction(interaction) {
     await interaction.update({ content: '申請をキャンセルしました。', components: [] });
     return endSession(session.id, 'キャンセル', interaction.client);
   }
+
+  // 想定外のボタン → Discord タイムアウト防止のため応答する
+  if (!interaction.replied && !interaction.deferred) {
+    await interaction.reply({ content: "その操作には対応していません。", ephemeral: true });
+  }
 }
 
+// ─────────────────────────────────────────────
+// Modal 送信処理
+// ─────────────────────────────────────────────
 async function handleModalSubmit(interaction) {
   const sessionId = interaction.customId.replace('immigration-modal-', '');
   const session = getSession(sessionId);
@@ -266,37 +253,32 @@ async function handleModalSubmit(interaction) {
 
   updateSessionLastAction(sessionId);
 
-  const version = session.data.version;
-
-  let mcid, nation, period, companionsInput, joinersInput;
+  let mcid, nation, period, companionsRaw, joinersRaw;
   try {
-    mcid = interaction.fields.getTextInputValue('mcid').trim();
-    nation = interaction.fields.getTextInputValue('nation').trim();
-    period = interaction.fields.getTextInputValue('period').trim();
-    companionsInput = interaction.fields.getTextInputValue('companions').trim();
-    joinersInput = interaction.fields.getTextInputValue('joiners').trim();
+    mcid          = interaction.fields.getTextInputValue('mcid').trim();
+    nation        = interaction.fields.getTextInputValue('nation').trim();
+    period        = interaction.fields.getTextInputValue('period').trim();
+    companionsRaw = interaction.fields.getTextInputValue('companions').trim();
+    joinersRaw    = interaction.fields.getTextInputValue('joiners').trim();
   } catch (err) {
     console.error('[Modal] フィールド取得エラー:', err);
     return interaction.reply({ content: '入力内容の取得に失敗しました。もう一度お試しください。', ephemeral: true });
   }
 
-  let companions = [];
-  let joiner = null;
+  const companions = (companionsRaw && companionsRaw !== 'なし')
+    ? companionsRaw.split(',').map(x => x.trim()).filter(Boolean)
+    : [];
+  const joiner = (joinersRaw && joinersRaw !== 'なし') ? joinersRaw : null;
 
-  if (companionsInput && companionsInput !== 'なし') {
-    companions = companionsInput.split(',').map(x => x.trim()).filter(Boolean);
-  }
-
-  if (joinersInput && joinersInput !== 'なし') {
-    joiner = joinersInput;
-  }
-
+  const version = session.data.version;
   session.data = { version, mcid, nation, period, companions, joiner };
   session.logs.push(`[${nowJST()}] Modal送信完了`);
   session.logs.push(`[${nowJST()}] version: ${version}, MCID: ${mcid}, 国籍: ${nation}`);
   session.logs.push(`[${nowJST()}] 期間: ${period}, 同行者: ${companions.join(',') || 'なし'}, 合流者: ${joiner || 'なし'}`);
 
+  // defer してから非同期審査を開始
   await interaction.deferReply();
+  await interaction.editReply({ content: "申請内容を確認中…" });
   session.logs.push(`[${nowJST()}] Modal送信後、審査開始`);
 
   const inputText = [
@@ -304,12 +286,10 @@ async function handleModalSubmit(interaction) {
     `国籍: ${nation}`,
     `目的・期間: ${period}`,
     companions.length > 0 ? `同行者: ${companions.join(', ')}` : '',
-    joiner ? `合流者: ${joiner}` : ''
+    joiner ? `合流者: ${joiner}` : '',
   ].filter(Boolean).join('\n');
 
-  let progressMsg = "申請内容を確認中…";
-  await interaction.editReply({ content: progressMsg });
-
+  // タイムアウトと審査を競走させる
   let isTimeout = false;
   const timeoutPromise = new Promise(resolve => {
     setTimeout(() => {
@@ -319,8 +299,7 @@ async function handleModalSubmit(interaction) {
   });
 
   const inspectionPromise = (async () => {
-    progressMsg = "申請内容のAI解析中…";
-    await interaction.editReply({ content: progressMsg });
+    await interaction.editReply({ content: "申請内容のAI解析中…" });
     try {
       return await runInspection(inputText, session);
     } catch (err) {
@@ -329,7 +308,7 @@ async function handleModalSubmit(interaction) {
     }
   })();
 
-  let result = await Promise.race([timeoutPromise, inspectionPromise]);
+  const result = await Promise.race([timeoutPromise, inspectionPromise]);
 
   if (isTimeout) {
     await interaction.editReply({ content: "⏳ 60秒間応答がなかったため、処理をタイムアウトで中断しました。再度申請してください。" });
@@ -340,9 +319,10 @@ async function handleModalSubmit(interaction) {
   const joinData = typeof result.content === "object" ? result.content : {};
 
   // 合流者確認が必要な場合
-  if (result.approved && Array.isArray(joinData.joiners) && joinData.joinerDiscordIds?.length > 0) {
+  if (result.approved && Array.isArray(joinData.joiners) && (joinData.joinerDiscordIds?.length ?? 0) > 0) {
     session.data.applicantDiscordId = interaction.user.id;
     session.data.parsed = joinData;
+    session.data.joinerDiscordIds = joinData.joinerDiscordIds;
 
     for (const discordId of joinData.joinerDiscordIds) {
       try {
@@ -359,14 +339,13 @@ async function handleModalSubmit(interaction) {
         );
         await user.send({
           content: `外務省入管局からの確認通知です。申請者 ${joinData.mcid} さんからあなたが国内で合流するユーザーである旨の申請がありました。この申請はお間違えございませんか?(心当たりがない場合は、「いいえ」をご選択ください。)`,
-          components: [row]
+          components: [row],
         });
       } catch (e) {
         console.error(`[JoinerConfirm][Error] DM 送信失敗: ${discordId}`, e);
       }
     }
 
-    session.data.joinerDiscordIds = joinData.joinerDiscordIds;
     await interaction.editReply({ content: '申請を受け付けました。しばらくお待ち下さい' });
     session.step = 'waitingJoiner';
     return;
@@ -382,7 +361,7 @@ async function handleModalSubmit(interaction) {
       const rawPeriod = embedData.period ?? embedData.期間;
       if (rawPeriod && (!embedData.start_datetime || !embedData.end_datetime)) {
         embedData.start_datetime = embedData.start_datetime || rawPeriod;
-        embedData.end_datetime = embedData.end_datetime || rawPeriod;
+        embedData.end_datetime   = embedData.end_datetime   || rawPeriod;
       }
     } catch (e) {
       console.error("[ERROR] JSON parse failed:", e);
@@ -391,21 +370,21 @@ async function handleModalSubmit(interaction) {
   }
 
   if (result.approved && Object.keys(embedData).length) {
-    const embed = createApprovalEmbed(embedData);
-    await interaction.editReply({ embeds: [embed] });
-
-    // 公示チャンネルへ送信
+    await interaction.editReply({ embeds: [createApprovalEmbed(embedData)] });
     await publishApproval(embedData, interaction.client);
-
     return endSession(session.id, "承認", interaction.client);
   } else {
-    const reasonMsg = typeof result.content === "string" ? result.content : "申請内容に不備や却下条件があったため、審査が却下されました。";
-    const embed = createRejectionEmbed(embedData, reasonMsg);
-    await interaction.editReply({ embeds: [embed] });
+    const reasonMsg = typeof result.content === "string"
+      ? result.content
+      : "申請内容に不備や却下条件があったため、審査が却下されました。";
+    await interaction.editReply({ embeds: [createRejectionEmbed(embedData, reasonMsg)] });
     return endSession(session.id, "却下", interaction.client);
   }
 }
 
+// ─────────────────────────────────────────────
+// Embed 生成ヘルパー
+// ─────────────────────────────────────────────
 function createApprovalEmbed(parsed) {
   const today = new Date().toISOString().slice(0, 10);
   const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;
@@ -413,59 +392,62 @@ function createApprovalEmbed(parsed) {
   const companionStr = Array.isArray(parsed.companions) && parsed.companions.length > 0
     ? parsed.companions.map(c => typeof c === "string" ? c : c.mcid).filter(Boolean).join(", ")
     : "なし";
-
   const joinerStr = Array.isArray(parsed.joiners) && parsed.joiners.length > 0
     ? parsed.joiners.join(", ")
     : "なし";
 
-  const fields = [
-    { name: "申請者", value: parsed.mcid, inline: true },
-    { name: "国籍", value: parsed.nation, inline: true },
-    { name: "申請日", value: nowJST(), inline: true },
-    { name: "入国目的", value: safeReplace(parsed.purpose), inline: true },
-    { name: "入国期間", value: safeReplace(`${parsed.start_datetime} ～ ${parsed.end_datetime}`), inline: false },
-    { name: "同行者", value: companionStr, inline: false },
-    { name: "合流者", value: joinerStr, inline: false },
-  ];
-
   return new EmbedBuilder()
     .setTitle("一時入国審査結果")
     .setColor(0x3498db)
-    .addFields(fields)
     .setDescription(
-      "自動入国審査システムです。上記の通り申請されました\"__**一時入国審査**__\"について、審査が完了いたしましたので、以下の通り通知いたします。\n\n" +
-      `> 審査結果：**承認**`
+      "自動入国審査システムです。上記の通り申請されました\"__**一時入国審査**__\"について、" +
+      "審査が完了いたしましたので、以下の通り通知いたします。\n\n> 審査結果：**承認**"
     )
-    .addFields({
-      name: "【留意事項】", value:
-        "・在留期間の延長が予定される場合、速やかににこのチャンネルでお知らせください。但し、合計在留期間が31日を超える場合、新規に申請が必要です。\n" +
-        "・入国が承認されている期間中、申請内容に誤りがあることが判明したり、異なる行為をした場合、又は、コムザール連邦共和国の法令に違反したり、行政省庁の指示に従わなかった場合は、**承認が取り消される**場合があります。\n" +
-        "・入国中、あなたは[コムザール連邦共和国の明示する法令](https://comzer-gov.net/laws/) を理解したものと解釈され、これの不知を理由に抗弁することはできません。\n" +
-        "・あなたがコムザール連邦共和国及び国民に対して損害を生じさせた場合、行政省庁は、あなたが在籍する国家に対して、相当の対応を行う可能性があります。\n" +
-        "・あなたの入国関連情報は、その期間中、公表が不適切と判断される情報を除外した上で、コムザール連邦共和国国民に対して自動的に共有されます。\n\n" +
-        "コムザール連邦共和国へようこそ。"
-    });
+    .addFields(
+      { name: "申請者",   value: parsed.mcid,                                                   inline: true },
+      { name: "国籍",     value: parsed.nation,                                                 inline: true },
+      { name: "申請日",   value: nowJST(),                                                      inline: true },
+      { name: "入国目的", value: safeReplace(parsed.purpose),                                   inline: true },
+      { name: "入国期間", value: safeReplace(`${parsed.start_datetime} ～ ${parsed.end_datetime}`), inline: false },
+      { name: "同行者",   value: companionStr,                                                  inline: false },
+      { name: "合流者",   value: joinerStr,                                                     inline: false },
+      {
+        name: "【留意事項】",
+        value:
+          "・在留期間の延長が予定される場合、速やかにこのチャンネルでお知らせください。" +
+          "但し、合計在留期間が31日を超える場合、新規に申請が必要です。\n" +
+          "・入国が承認されている期間中、申請内容に誤りがあることが判明したり、異なる行為をした場合、" +
+          "又は、コムザール連邦共和国の法令に違反したり、行政省庁の指示に従わなかった場合は、**承認が取り消される**場合があります。\n" +
+          "・入国中、あなたは[コムザール連邦共和国の明示する法令](https://comzer-gov.net/laws/) を理解したものと解釈され、" +
+          "これの不知を理由に抗弁することはできません。\n" +
+          "・あなたがコムザール連邦共和国及び国民に対して損害を生じさせた場合、行政省庁は、" +
+          "あなたが在籍する国家に対して、相当の対応を行う可能性があります。\n" +
+          "・あなたの入国関連情報は、その期間中、公表が不適切と判断される情報を除外した上で、" +
+          "コムザール連邦共和国国民に対して自動的に共有されます。\n\nコムザール連邦共和国へようこそ。",
+        inline: false,
+      }
+    );
 }
 
 function createRejectionEmbed(parsed, reasonMsg) {
   const companionStr = Array.isArray(parsed.companions) && parsed.companions.length > 0
     ? parsed.companions.map(c => typeof c === "string" ? c : c.mcid).filter(Boolean).join(", ")
     : "なし";
-
   const joinerStr = Array.isArray(parsed.joiners) && parsed.joiners.length > 0
     ? parsed.joiners.join(", ")
     : "なし";
 
   const details = Object.keys(parsed).length
     ? [
-      `申請者: ${parsed.mcid || "不明"}`,
-      `国籍: ${parsed.nation || "不明"}`,
-      `申請日: ${nowJST()}`,
-      `入国目的: ${parsed.purpose || "不明"}`,
-      `入国期間: ${(parsed.start_datetime && parsed.end_datetime) ? `${parsed.start_datetime} ～ ${parsed.end_datetime}` : "不明"}`,
-      `同行者: ${companionStr}`,
-      `合流者: ${joinerStr}`,
-    ].join("\n")
+        `申請者: ${parsed.mcid    || "不明"}`,
+        `国籍: ${parsed.nation    || "不明"}`,
+        `申請日: ${nowJST()}`,
+        `入国目的: ${parsed.purpose || "不明"}`,
+        `入国期間: ${(parsed.start_datetime && parsed.end_datetime)
+          ? `${parsed.start_datetime} ～ ${parsed.end_datetime}` : "不明"}`,
+        `同行者: ${companionStr}`,
+        `合流者: ${joinerStr}`,
+      ].join("\n")
     : "（申請内容の取得に失敗）";
 
   return new EmbedBuilder()
@@ -482,33 +464,29 @@ async function publishApproval(parsed, client) {
   const companionStr = Array.isArray(parsed.companions) && parsed.companions.length > 0
     ? parsed.companions.map(c => typeof c === "string" ? c : c.mcid).filter(Boolean).join(", ")
     : "なし";
-
   const joinerStr = Array.isArray(parsed.joiners) && parsed.joiners.length > 0
     ? parsed.joiners.join(", ")
     : "なし";
 
-  const publishFields = [
-    { name: "申請者", value: parsed.mcid, inline: true },
-    { name: "国籍", value: parsed.nation, inline: true },
-    { name: "申請日", value: nowJST(), inline: true },
-    { name: "入国目的", value: safeReplace(parsed.purpose), inline: true },
-    { name: "入国期間", value: safeReplace(`${parsed.start_datetime} ～ ${parsed.end_datetime}`), inline: false },
-    { name: "同行者", value: companionStr, inline: false },
-    { name: "合流者", value: joinerStr, inline: false },
-  ];
-
   const publishEmbed = new EmbedBuilder()
     .setTitle("【一時入国審査に係る入国者の公示】")
-    .addFields(publishFields)
     .setColor(0x27ae60)
-    .setDescription("以下の外国籍プレイヤーの入国が承認された為、以下の通り公示いたします。(外務省入管部)");
+    .setDescription("以下の外国籍プレイヤーの入国が承認された為、以下の通り公示いたします。(外務省入管部)")
+    .addFields(
+      { name: "申請者",   value: parsed.mcid,                                                   inline: true },
+      { name: "国籍",     value: parsed.nation,                                                 inline: true },
+      { name: "申請日",   value: nowJST(),                                                      inline: true },
+      { name: "入国目的", value: safeReplace(parsed.purpose),                                   inline: true },
+      { name: "入国期間", value: safeReplace(`${parsed.start_datetime} ～ ${parsed.end_datetime}`), inline: false },
+      { name: "同行者",   value: companionStr,                                                  inline: false },
+      { name: "合流者",   value: joinerStr,                                                     inline: false },
+    );
 
   const publishChannelId = debugCommand.isDebugMode
     ? (config.debugChannelId || LOG_CHANNEL_ID)
     : (config.publishChannelId || config.logChannelId || LOG_CHANNEL_ID);
 
   const publishChannel = client.channels.cache.get(publishChannelId);
-
   if (publishChannel?.isTextBased()) {
     await publishChannel.send({ embeds: [publishEmbed] });
   } else {
