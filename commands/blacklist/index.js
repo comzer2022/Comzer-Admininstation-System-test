@@ -4,7 +4,6 @@ import * as addPlayer from './addPlayer.js';
 import * as removePlayer from './removePlayer.js';
 import * as listBlacklist from './listBlacklist.js';
 
-// コマンド定義の配列をエクスポート
 export const commands = [
   addCountry.data,
   removeCountry.data,
@@ -13,7 +12,6 @@ export const commands = [
   listBlacklist.data,
 ];
 
-// コマンドハンドラ - 各コマンドにディスパッチ
 export async function handleCommands(interaction) {
   if (!interaction.isChatInputCommand()) return false;
 
