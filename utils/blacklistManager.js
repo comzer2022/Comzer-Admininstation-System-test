@@ -6,7 +6,6 @@ const PRIVATE_KEY         = process.env.GOOGLE_PRIVATE_KEY;
 const TAB_NAME            = process.env.BLACKLIST_TAB_NAME || "blacklist(CAS連携)";
 
 let sheet = null;
-// 初期化中の Promise を保持することで並列呼び出し時の二重初期化を防ぐ
 let initPromise = null;
 
 export async function initBlacklist() {
@@ -29,9 +28,6 @@ export async function initBlacklist() {
   try {
     await initPromise;
   } finally {
-    // 成功/失敗どちらでも initPromise をリセット
-    // 成功時は sheet が設定されているので次回は即返す
-    // 失敗時は次回の呼び出しで再試行できる
     initPromise = null;
   }
 }
