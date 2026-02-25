@@ -15,10 +15,8 @@ export async function getOrCreateHook(channel, roleId) {
 
   let hook;
   if (existing && existing.token) {
-    // Bot が作成した Webhook → token あり → WebhookClient として使用
     hook = new WebhookClient({ id: existing.id, token: existing.token });
   } else if (existing) {
-    // token が null（他ユーザー作成 or フォロワー Webhook）→ 新たに作成
     hook = await channel.createWebhook({ name: webhookName, avatar: webhookIcon });
   } else {
     hook = await channel.createWebhook({ name: webhookName, avatar: webhookIcon });
