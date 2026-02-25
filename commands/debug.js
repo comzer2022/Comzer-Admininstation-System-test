@@ -21,7 +21,7 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction) {
-  // 1. 実行者が許可されたロールを「少なくとも1つ」持っているか確認
+  // 1. 実行者が許可されたロールを少なくとも1つ持っているか確認
   const hasPermission = interaction.member.roles.cache.some(role => 
     ALLOWED_DEBUG_ROLE_IDS.includes(role.id)
   );
