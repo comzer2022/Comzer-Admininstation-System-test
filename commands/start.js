@@ -1,4 +1,3 @@
-// commands/start.js
 import { SlashCommandBuilder } from 'discord.js';
 import axios from 'axios';
 
