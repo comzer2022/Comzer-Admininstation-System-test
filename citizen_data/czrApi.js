@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fetch from 'node-fetch';
 
-const BASE   = process.env.CZR_BASE; // 例: https://comzer-gov.net
+const BASE   = process.env.CZR_BASE;
 const KEY    = process.env.CZR_KEY || 'casbot';
 const SECRET = process.env.CZR_SECRET;
 
@@ -22,7 +22,6 @@ async function fetchWithRetry(url, init, { attempts = 5, baseDelay = 500 } = {})
       if (res.ok) return res;
       const status = res.status;
       const text = await res.text().catch(()=>'');
-      // リトライ対象ステータス
       if ([408, 425, 429, 500, 502, 503, 504].includes(status)) {
         lastErr = new Error(`HTTP ${status}: ${text}`);
       } else {
@@ -32,7 +31,7 @@ async function fetchWithRetry(url, init, { attempts = 5, baseDelay = 500 } = {})
       lastErr = e;
     }
     const jitter = Math.floor(Math.random() * 300);
-    const wait = baseDelay * Math.pow(2, i) + jitter; // 500, 1,300, 2,700, ...
+    const wait = baseDelay * Math.pow(2, i) + jitter;
     await new Promise(r => setTimeout(r, wait));
   }
   throw lastErr;
@@ -42,7 +41,7 @@ export async function upsertMember(payload) {
   const body = JSON.stringify(payload);
   const { ts, sig } = sign(body);
   const res = await fetchWithRetry(`${BASE}/wp-json/czr-bridge/v1/ledger/member`, {
-    method: 'POST', // ← POST へ変更（PUT も可だが WAF 対策）
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
