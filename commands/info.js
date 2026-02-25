@@ -57,8 +57,6 @@ export async function execute(interaction) {
     // マッピングに基づいてデータを追加
     Object.keys(labelMap).forEach(key => {
       let value = resData[key] || '情報なし';
-      
-      // JSON形式の文字列（例: ["社名"]）のクリーンアップ
       if (typeof value === 'string' && value.startsWith('[')) {
         try {
           const parsed = JSON.parse(value);
