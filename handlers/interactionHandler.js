@@ -53,7 +53,6 @@ export async function handleInteraction(interaction) {
       await cmd.execute(interaction);
       return;
     }
-    // 未登録コマンド → blacklist にフォールスルー
   }
 
   // blacklist コマンド処理
@@ -110,7 +109,7 @@ async function handleJoinerResponse(interaction) {
   const expectCount = (session.data.joinerDiscordIds || []).length;
   const gotCount = Object.keys(session.data.joinerResponses).length;
 
-  // joinerDiscordIds が未設定または 0 件の場合は待機継続（誤作動防止）
+  // joinerDiscordIds が未設定または 0 件の場合は待機継続
   if (expectCount === 0 || gotCount < expectCount) return;
 
   const anyNo = Object.values(session.data.joinerResponses).includes('no');
@@ -214,7 +213,6 @@ async function handleButtonInteraction(interaction) {
     session.step = 'select_version';
 
     const row = new ActionRowBuilder().addComponents(
-      // ✅ StringSelectMenuBuilder（旧 SelectMenuBuilder は v14 で廃止）
       new StringSelectMenuBuilder()
         .setCustomId(`version-select-${session.id}`)
         .setPlaceholder('ゲームエディションを選択してください')
@@ -234,7 +232,6 @@ async function handleButtonInteraction(interaction) {
     return endSession(session.id, 'キャンセル', interaction.client);
   }
 
-  // 想定外のボタン → Discord タイムアウト防止のため応答する
   if (!interaction.replied && !interaction.deferred) {
     await interaction.reply({ content: "その操作には対応していません。", ephemeral: true });
   }
