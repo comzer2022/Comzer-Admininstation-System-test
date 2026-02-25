@@ -7,7 +7,6 @@ export const data = new SlashCommandBuilder()
     o.setName("message_id").setDescription("削除するメッセージのID").setRequired(true)
   );
 
-// embedPost.js の roleGroups と同じ定義
 const ROLE_GROUPS = [
   { envKey: 'ROLLID_MINISTER',   mode: 'minister', label: '閣僚会議議員' },
   { envKey: 'ROLLID_DIPLOMAT',   mode: 'diplomat', label: '外交官(外務省 総合外務部職員)' },
