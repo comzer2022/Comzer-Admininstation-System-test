@@ -1,7 +1,6 @@
 import { upsertMember } from './czrApi.js';
 
 const GUILD_ID     = process.env.CZR_GUILD_ID || '1188411576483590194';
-// 環境変数から複数 ID を読み込む（カンマ区切り）
 const DIPLOMAT_IDS = (process.env.ROLLID_DIPLOMAT || '1188429176739479562')
   .split(',').map(s => s.trim()).filter(Boolean);
 
