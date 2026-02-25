@@ -15,7 +15,7 @@ export const EXCLUDE_KEYWORDS = [
 
 /**
  * テキストが除外キーワードを含むかチェック
- * @param {string} text - チェックするテキスト
+ * @param {string} チェックするテキスト
  * @returns {boolean} 除外すべきならtrue
  */
 export function shouldExclude(text) {
@@ -33,7 +33,7 @@ export function cleanText(text) {
 
 /**
  * 引数の配列をフィルタリングして送信可能なテキストに変換
- * @param {Array} args - console.log/error の引数
+ * @param {Array} console.log/error の引数
  * @returns {string|null} 送信可能なテキスト、または除外すべき場合はnull
  */
 export function filterAndFormat(args) {
