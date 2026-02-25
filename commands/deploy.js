@@ -31,7 +31,7 @@ export async function execute(interaction) {
       infoData.toJSON(),
       debugData.toJSON(),
       deleteRolepostData.toJSON(),
-      data.toJSON(), // deploy コマンド自身
+      data.toJSON(),
       ...blacklistCommands.map(c => c.toJSON()),
     ];
 
