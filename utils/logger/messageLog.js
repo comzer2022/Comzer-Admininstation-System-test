@@ -1,7 +1,7 @@
 /**
- * @param {import('discord.js').Message} message
- * @param {string|undefined} ticketCat - TICKET_CAT 環境変数の値
- * @param {import('discord.js').Client} client
+ * @param {import('discord.js').Message}
+ * @param {string|undefined}
+ * @param {import('discord.js').Client}
  */
 export function messagelog(message, ticketCat, client) {
   const channel     = message.channel;
@@ -9,11 +9,7 @@ export function messagelog(message, ticketCat, client) {
   const channelName = channel?.name        ?? 'unknown';
   const parentId    = channel?.parentId    ?? 'none';
   const authorId    = message.author?.id   ?? 'unknown';
-
-  // mentions.has() の結果を含めることで EXCLUDE_KEYWORDS に引っかかりローカルのみに残る
   const mentionsBot = client?.user ? message.mentions.has(client.user) : false;
-
-  // content: を含む出力 → Webhook 除外キーワードに該当しローカルログのみに残る
   const contentPreview = message.content?.slice(0, 80) ?? '';
 
   console.log(
@@ -32,7 +28,5 @@ export function logDebugInfo(label, ...args) {
     }
     return String(a);
   });
-
-  // （型： を含めることで EXCLUDE_KEYWORDS に引っかかりローカルログのみに残る）
   console.log(`[DEBUG] ${label} （型：${typeof args[0]}）`, ...parts);
 }
