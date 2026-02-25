@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';  // ← @discordjs/builders から変更
+import { SlashCommandBuilder } from 'discord.js';
 import { removeBlacklistEntry } from '../../utils/blacklistManager.js';
 import { checkPermissions, unauthorizedReply } from './utils.js';
 
