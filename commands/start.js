@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export const data = new SlashCommandBuilder()
   .setName('start')
-  .setDescription('ボット（アプリ）を再起動します');
+  .setDescription('ボットを再起動します');
 
 export async function execute(interaction) {
   // ── 権限チェック ──
@@ -15,17 +15,14 @@ export async function execute(interaction) {
 
   let isAllowed = false;
   if (!interaction.guildId) {
-    // DM／プライベートならユーザーIDのみで判定
     isAllowed = allowedUserIds.includes(interaction.user.id);
   } else {
-    // ギルドならユーザーID or ロールID で判定
     const memberRoles = interaction.member.roles.cache;
     isAllowed = allowedUserIds.includes(interaction.user.id)
              || allowedRoleIds.some(rid => memberRoles.has(rid));
   }
 
   if (!isAllowed) {
-    // 権限なければ即時回答（Ephemeral は flags で指定）
     return interaction.reply({
       content: 'このコマンドを実行する権限がありません。',
       flags: 1 << 6
@@ -41,7 +38,6 @@ export async function execute(interaction) {
     const appId    = process.env.KOYEB_APP_ID;
 
     if (apiToken && appId) {
-      // Koyeb に Resume リクエスト
       await axios.post(
         `https://api.koyeb.com/v1/apps/${appId}/actions/resume`,
         {},
