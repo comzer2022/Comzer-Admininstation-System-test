@@ -4,7 +4,6 @@ const sessions = new Map();
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
 
 // bot (client) を保持するための参照
-// endSession をタイムアウト監視から呼ぶ際に client が必要
 let _botClient = null;
 
 export function setBotClient(client) {
@@ -74,7 +73,7 @@ export function updateSessionLastAction(id) {
   }
 }
 
-// タイムアウト監視（bot 引数なしで endSession を呼ぶ → _botClient を使用）
+// タイムアウト監視
 setInterval(() => {
   const now = Date.now();
   for (const session of sessions.values()) {
