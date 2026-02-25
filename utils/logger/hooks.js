@@ -7,7 +7,7 @@ export const originalError = console.error;
 
 /**
  * エラーオブジェクトを文字列に変換
- * @param {Error} error - エラーオブジェクト
+ * @param {Error} エラーオブジェクト
  * @returns {string} 変換された文字列
  */
 function errorToString(error) {
@@ -16,7 +16,7 @@ function errorToString(error) {
 
 /**
  * オブジェクトを文字列に変換
- * @param {*} obj - 変換するオブジェクト
+ * @param {*} 変換するオブジェクト
  * @returns {string} 変換された文字列
  */
 function objectToString(obj) {
@@ -29,7 +29,7 @@ function objectToString(obj) {
 
 /**
  * 引数を文字列に変換
- * @param {*} arg - 変換する引数
+ * @param {*} 変換する引数
  * @returns {string} 変換された文字列
  */
 function argToString(arg) {
@@ -63,12 +63,8 @@ export function hookConsoleLog() {
  */
 export function hookConsoleError() {
   console.error = (...args) => {
-    // 元の console.error を実行
     originalError(...args);
-
-    // 引数を文字列に変換
     const raw = args.map(argToString).join('\n');
-
     // フィルタリングして送信
     if (!shouldExclude(raw)) {
       const cleaned = cleanText(raw);
@@ -78,10 +74,6 @@ export function hookConsoleError() {
     }
   };
 }
-
-/**
- * すべてのコンソールフックを初期化
- */
 export function initializeHooks() {
   hookConsoleLog();
   hookConsoleError();
