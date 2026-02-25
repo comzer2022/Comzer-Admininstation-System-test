@@ -1,4 +1,3 @@
-// commands/status.js
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import axios from 'axios';
@@ -64,34 +63,24 @@ async function checkBedrock() {
 // コマンド実行本体
 export async function execute(interaction) {
   console.log("[STATUS EXECUTE] replied:", interaction.replied, "deferred:", interaction.deferred);
-
-  // 既に返信/デファー済みなら重複を避ける（既存の挙動を維持）
   if (interaction.replied || interaction.deferred) return;
-
-  // 遅延が発生するため最初に defer しておく（ephemeral = true）
   try {
     await interaction.deferReply({ ephemeral: true });
   } catch (err) {
     console.error('[STATUS] deferReply failed:', err);
-    // defer に失敗したら諦めて終了
     return;
   }
-
-  // 並列でチェックを実行（各チェックは内部でエラーハンドリングする）
   const results = await Promise.allSettled([
     checkCitizenSheet(),
     checkBlacklistSheet(),
     checkMojang(),
     checkBedrock(),
   ]);
-
-  // 結果取り出し（失敗時は連携失敗文字列にフォールバック）
   const citizenSheet = results[0].status === 'fulfilled' ? results[0].value : '⛔ 国民名簿：連携失敗';
   const blacklistSheet = results[1].status === 'fulfilled' ? results[1].value : '⛔ ブラックリスト：連携失敗';
   const mojangApi = results[2].status === 'fulfilled' ? results[2].value : '⛔ Mojang API：連携失敗';
   const bedrockApi = results[3].status === 'fulfilled' ? results[3].value : '⛔ Bedrock API：連携失敗';
 
-  // 最終診断時刻を更新 → 表示用文字列を生成
   updateLastSelfCheck();
   const timeStr = lastSelfCheck.toLocaleString('ja-JP', {
     hour12: false,
@@ -109,12 +98,10 @@ export async function execute(interaction) {
     )
     .setColor(0x2ecc71);
 
-  // 処理結果を editReply で返す（defer しているので reply ではなく editReply）
   try {
     await interaction.editReply({ embeds: [embed] });
   } catch (err) {
     console.error('[STATUS] editReply failed:', err);
-    // editReply が失敗したら followUp を試す（ただし Unknown interaction の場合は失敗する）
     try {
       await interaction.followUp({ embeds: [embed], ephemeral: true });
     } catch (err2) {
@@ -123,5 +110,5 @@ export async function execute(interaction) {
   }
 }
 
-// lastSelfCheck を外部から参照できるように export
+// lastSelfCheckをexport
 export { lastSelfCheck };
