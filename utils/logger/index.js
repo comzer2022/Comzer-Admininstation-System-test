@@ -4,8 +4,6 @@ import { messagelog, logDebugInfo } from './messageLog.js';
 
 // コンソールフックを初期化
 initializeHooks();
-
-// 初期化メッセージ
 if (isWebhookEnabled()) {
   originalLog('✅ Discord Webhook ロギングが有効化されました');
 } else {
@@ -14,7 +12,6 @@ if (isWebhookEnabled()) {
 
 // エクスポート
 export { messagelog, logDebugInfo, originalLog, originalError };
-
 export const logger = {
   messagelog,
   logDebugInfo,
