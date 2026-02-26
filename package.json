@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": ">=20"
   },
   "scripts": {
     "build": "echo 'no build needed'",
@@ -16,11 +16,9 @@
     "body-parser": "^2.2.0",
     "discord.js": "^14.16.0",
     "express": "^5.1.0",
-    "google-spreadsheet": "^3.3.0",
-    "mysql2": "^3.3.1",
+    "google-auth-library": "^9.0.0",
+    "google-spreadsheet": "^5.2.0",
     "node-fetch": "^3.3.2",
-    "openai": "^4.30.0",
-    "pako": "^2.1.0",
-    "webdav": "^3.0.0"
+    "openai": "^4.30.0"
   }
 }

@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
+import { JWT } from 'google-auth-library';
 import axios from 'axios';
 
 // 最終診断時刻の保持
@@ -12,8 +13,6 @@ export function updateLastSelfCheck() {
 export const data = new SlashCommandBuilder()
   .setName('status')
   .setDescription('BOTの最終自己診断時刻と連携状態を表示');
-
-// ヘルパー：個別チェック
 async function checkCitizenSheet() {
   try {
     const resp = await axios.get('https://comzer-gov.net/wp-json/czr/v1/healthz', { timeout: 3000 });
@@ -26,11 +25,12 @@ async function checkCitizenSheet() {
 
 async function checkBlacklistSheet() {
   try {
-    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
-    await doc.useServiceAccountAuth({
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+    const auth = new JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
+    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, auth);
     await doc.loadInfo();
     const tab = process.env.BLACKLIST_TAB_NAME || 'blacklist(CAS連携)';
     return doc.sheetsByTitle[tab] ? '✅ ブラックリスト：連携中' : '⛔ ブラックリスト：連携失敗';
@@ -76,10 +76,10 @@ export async function execute(interaction) {
     checkMojang(),
     checkBedrock(),
   ]);
-  const citizenSheet = results[0].status === 'fulfilled' ? results[0].value : '⛔ 国民名簿：連携失敗';
+  const citizenSheet   = results[0].status === 'fulfilled' ? results[0].value : '⛔ 国民名簿：連携失敗';
   const blacklistSheet = results[1].status === 'fulfilled' ? results[1].value : '⛔ ブラックリスト：連携失敗';
-  const mojangApi = results[2].status === 'fulfilled' ? results[2].value : '⛔ Mojang API：連携失敗';
-  const bedrockApi = results[3].status === 'fulfilled' ? results[3].value : '⛔ Bedrock API：連携失敗';
+  const mojangApi      = results[2].status === 'fulfilled' ? results[2].value : '⛔ Mojang API：連携失敗';
+  const bedrockApi     = results[3].status === 'fulfilled' ? results[3].value : '⛔ Bedrock API：連携失敗';
 
   updateLastSelfCheck();
   const timeStr = lastSelfCheck.toLocaleString('ja-JP', {
@@ -110,5 +110,5 @@ export async function execute(interaction) {
   }
 }
 
-// lastSelfCheckをexport
+// lastSelfCheck をエクスポート
 export { lastSelfCheck };
