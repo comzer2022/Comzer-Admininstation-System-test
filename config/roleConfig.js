@@ -37,7 +37,6 @@ export const ROLE_CONFIG = {
   ),
 };
 
-// name と icon プロパティを追加
 Object.entries(ROLE_CONFIG).forEach(([roleId, cfg]) => {
   cfg.name = cfg.embedName;
   cfg.icon = cfg.embedIcon;

@@ -11,7 +11,6 @@ export async function execute(interaction) {
     .map(id => id.trim())
     .filter(Boolean);
 
-  // ── 実行者のロールID取得（ギルド or DM） ──
   let executorRoleIds = [];
   if (interaction.guildId) {
     executorRoleIds = interaction.member.roles.cache.map(r => r.id);
@@ -25,7 +24,6 @@ export async function execute(interaction) {
     executorRoleIds = member.roles.cache.map(r => r.id);
   }
 
-  // ── 権限チェック ──
   const isAllowed = allowedRoleIds.some(rid => executorRoleIds.includes(rid));
   if (!isAllowed) {
     return interaction.reply({
@@ -34,11 +32,11 @@ export async function execute(interaction) {
     });
   }
 
-  // ── ACK／応答 ──
+  // ACK／応答
   await interaction.deferReply({ ephemeral: true });
   await interaction.editReply({ content: 'ボットをシャットダウンします' });
 
-  //Pause処理
+  // Pause処理
   setTimeout(async () => {
     try {
       interaction.client.destroy();

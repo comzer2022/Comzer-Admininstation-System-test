@@ -87,9 +87,7 @@ export async function handleInteraction(interaction) {
   }
 }
 
-// ─────────────────────────────────────────────
 // 合流者確認ボタン応答
-// ─────────────────────────────────────────────
 async function handleJoinerResponse(interaction) {
   const parts = interaction.customId.split('-');
   const answer = parts[1];
@@ -138,9 +136,7 @@ async function handleJoinerResponse(interaction) {
   }
 }
 
-// ─────────────────────────────────────────────
 // ゲームエディション選択 → Modal 表示
-// ─────────────────────────────────────────────
 async function handleVersionSelect(interaction) {
   const sessionId = interaction.customId.replace('version-select-', '');
   const session = getSession(sessionId);
@@ -189,9 +185,7 @@ async function handleVersionSelect(interaction) {
   session.step = 'modal_submitted';
 }
 
-// ─────────────────────────────────────────────
 // ボタン処理（start / cancel）
-// ─────────────────────────────────────────────
 async function handleButtonInteraction(interaction) {
   const parts = interaction.customId.split('-');
   const type = parts[0];
@@ -237,9 +231,7 @@ async function handleButtonInteraction(interaction) {
   }
 }
 
-// ─────────────────────────────────────────────
 // Modal 送信処理
-// ─────────────────────────────────────────────
 async function handleModalSubmit(interaction) {
   const sessionId = interaction.customId.replace('immigration-modal-', '');
   const session = getSession(sessionId);
@@ -379,9 +371,7 @@ async function handleModalSubmit(interaction) {
   }
 }
 
-// ─────────────────────────────────────────────
 // Embed 生成ヘルパー
-// ─────────────────────────────────────────────
 function createApprovalEmbed(parsed) {
   const today = new Date().toISOString().slice(0, 10);
   const safeReplace = s => typeof s === "string" ? s.replace(/__TODAY__/g, today) : s;

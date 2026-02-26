@@ -21,12 +21,10 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction) {
-  // 1. 実行者が許可されたロールを少なくとも1つ持っているか確認
+  // 実行者が許可されたロールを少なくとも1つ持っているか確認
   const hasPermission = interaction.member.roles.cache.some(role => 
     ALLOWED_DEBUG_ROLE_IDS.includes(role.id)
   );
-
-  // ロールを持っていない場合は拒否
   if (!hasPermission) {
     return interaction.reply({
       content: "このコマンドを実行する権限がありません。",
@@ -34,13 +32,13 @@ export async function execute(interaction) {
     });
   }
 
-  // 2. 選択肢に基づいて true / false を設定
+  // 選択肢に基づいて true / false を設定
   const choice = interaction.options.getString('mode');
   isDebugMode = (choice === 'on');
   
   const statusText = isDebugMode ? "ON" : "OFF";
   
-  // 3. 結果を返信
+  // 結果を返信
   await interaction.reply({
     content: `行政システムのデバッグモードを **${statusText}** に設定しました。`,
     ephemeral: true

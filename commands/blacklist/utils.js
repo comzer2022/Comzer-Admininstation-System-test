@@ -10,7 +10,6 @@ export async function checkPermissions(interaction) {
     userRoleIds = member.roles.cache.map(r => String(r.id));
   }
 
-  // EXAMINER_ROLE_IDS を追加
   const ALLOWED_ROLE_IDS = [
     ...(process.env.ROLLID_MINISTER   ? process.env.ROLLID_MINISTER.split(',')   : []),
     ...(process.env.ROLLID_DIPLOMAT   ? process.env.ROLLID_DIPLOMAT.split(',')   : []),

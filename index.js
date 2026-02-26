@@ -3,8 +3,8 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import express from 'express';
 import bodyParser from 'body-parser';
 import { ROLE_CONFIG } from './config/roleConfig.js';
-import { setupNotificationAPI } from './services/notificationqueue.js';  // ← 小文字に修正
-import { registerEventHandlers } from './handlers/eventhandlers.js';      // ← 小文字に修正
+import { setupNotificationAPI } from './services/notificationqueue.js';
+import { registerEventHandlers } from './handlers/eventhandlers.js'; 
 import { initBlacklist } from './utils/blacklistManager.js';
 import * as embedPost from './commands/embedPost.js';
 import * as statusCommand from './commands/status.js';

@@ -66,14 +66,14 @@ export async function execute(interaction) {
   try {
     const msg = await channel.messages.fetch(messageId);
 
-    // 1) Webhook 経由でないメッセージは削除不可
+    // Webhook 経由でないメッセージは削除不可
     if (!msg.webhookId) {
       return await interaction.editReply({
         content: "コムザール行政システムが送信した役職発言のみ削除できます。",
       });
     }
 
-    // 2) Embed の author.name から roleId を逆引き
+    // Embed の author.name から roleId を逆引き
     const authorName = msg.embeds[0]?.author?.name;
     if (!authorName) {
       return await interaction.editReply({
@@ -91,7 +91,7 @@ export async function execute(interaction) {
       });
     }
 
-    // 3) Embed の roleId からモード判定
+    // Embed の roleId からモード判定
     const mode = getModeFromRoleId(roleIdOfEmbed);
     if (!mode) {
       return await interaction.editReply({
@@ -99,7 +99,7 @@ export async function execute(interaction) {
       });
     }
 
-    // 4) 同じモードのロールを持っているか確認
+    // 同じモードのロールを持っているか確認
     const allowedIds = getRoleIdsByMode(mode);
     const hasDeletePermission = allowedIds.some(id => userRoleIds.includes(id));
 
@@ -110,7 +110,7 @@ export async function execute(interaction) {
       });
     }
 
-    // 5) 削除実行
+    // 削除実行
     await msg.delete();
     return await interaction.editReply({
       content: "役職発言を削除しました。",

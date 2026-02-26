@@ -6,7 +6,7 @@ export const data = new SlashCommandBuilder()
   .setDescription('ボットを再起動します');
 
 export async function execute(interaction) {
-  // ── 権限チェック ──
+  // 権限チェック
   const allowedUserIds = (process.env.STOP_USER_IDS || '')
     .split(',').map(id => id.trim()).filter(Boolean);
   const allowedRoleIds = (process.env.STOP_ROLE_IDS || '')
@@ -28,7 +28,7 @@ export async function execute(interaction) {
     });
   }
 
-  // ── ACK ──
+  // ACK
   await interaction.deferReply({ flags: 1 << 6 });
   await interaction.editReply({ content: 'ボットを再起動しています…' });
 

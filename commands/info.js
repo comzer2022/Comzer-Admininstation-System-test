@@ -10,7 +10,7 @@ export async function execute(interaction) {
   const WP_API_URL = 'https://comzer-gov.net/wp-json/custom/v1/citizen-info/'; // WPのURL
   const API_KEY = 'BANANATOYOOGURUTOWOAWASERUTOOISI'
 
-  // 1. ロールチェック
+  // ロールチェック
   if (!interaction.member.roles.cache.has(REQUIR_ROLE_ID)) {
     return await interaction.reply({
       content: '❌ エラー：このコマンドを実行する権限がありません。',

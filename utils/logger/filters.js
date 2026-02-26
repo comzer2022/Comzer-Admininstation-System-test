@@ -1,7 +1,4 @@
-/**
- * 除外キーワード
- * これらを含むログは Discord Webhook に送信されない
- */
+// 除外キーワード
 export const EXCLUDE_KEYWORDS = [
   'parentId:',
   'TICKET_CAT:',
@@ -13,29 +10,16 @@ export const EXCLUDE_KEYWORDS = [
   'channelName:',
 ];
 
-/**
- * テキストが除外キーワードを含むかチェック
- * @param {string} チェックするテキスト
- * @returns {boolean} 除外すべきならtrue
- */
 export function shouldExclude(text) {
   return EXCLUDE_KEYWORDS.some(keyword => text.includes(keyword));
 }
 
-/**
- * テキストをクリーンアップ（前後の空白を削除）
- * @param {string} text - クリーンアップするテキスト
- * @returns {string} クリーンアップされたテキスト
- */
+// テキストをクリーンアップ（前後の空白を削除）
 export function cleanText(text) {
   return text.trim();
 }
 
-/**
- * 引数の配列をフィルタリングして送信可能なテキストに変換
- * @param {Array} console.log/error の引数
- * @returns {string|null} 送信可能なテキスト、または除外すべき場合はnull
- */
+// 引数の配列をフィルタリングして送信可能なテキストに変換
 export function filterAndFormat(args) {
   const rawText = args.map(String).join(' ');
 

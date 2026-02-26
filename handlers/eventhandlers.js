@@ -6,10 +6,8 @@ import { setBotClient } from '../services/sessionManager.js';
 import * as statusCommand from '../commands/status.js';
 
 export function registerEventHandlers(client) {
-  // ready 時に sessionManager へ client を渡す
   client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}`);
-    // sessionManager に bot client を登録
     setBotClient(client);
 
     // 初回完全同期

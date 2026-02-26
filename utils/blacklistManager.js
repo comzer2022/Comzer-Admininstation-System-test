@@ -9,7 +9,7 @@ let sheet = null;
 let initPromise = null;
 
 export async function initBlacklist() {
-  // 既に初期化済みなら即返す
+  // 既に初期化済みなら返す
   if (sheet) return;
   // 初期化中なら同じ Promise を待つ（二重初期化防止）
   if (initPromise) return initPromise;

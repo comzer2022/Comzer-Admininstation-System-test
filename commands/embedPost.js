@@ -6,16 +6,12 @@ import {
   MessageFlags,
 } from 'discord.js';
 
-/* --------------------------------------------------
- * 1. /rolepost スラッシュコマンド定義
- * -------------------------------------------------- */
+// rolepost スラッシュコマンド定義
 export const data = new SlashCommandBuilder()
   .setName('rolepost')
   .setDescription('役職発言モードの ON / OFF を切り替えます（トグル式）');
 
-/* --------------------------------------------------
- * 2. 発言モード管理
- * -------------------------------------------------- */
+// 発言モード管理
 const activeChannels = new Map();
 
 function ensureChannelMap(channelId) {
@@ -44,9 +40,7 @@ export function setInactive(channelId, userId) {
   if (chMap) chMap.delete(userId);
 }
 
-/* --------------------------------------------------
- * 3. /rolepost コマンド本体
- * -------------------------------------------------- */
+// rolepost コマンド本体
 export async function execute(interaction) {
   try {
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
@@ -131,9 +125,7 @@ export async function execute(interaction) {
   }
 }
 
-/* --------------------------------------------------
- * 4. 選択メニューレスポンス
- * -------------------------------------------------- */
+// 選択メニューレスポンス
 export async function handleRolepostSelect(interaction) {
   try {
     const [, , channelId, userId] = interaction.customId.split('-');
@@ -156,9 +148,7 @@ export async function handleRolepostSelect(interaction) {
   }
 }
 
-/* --------------------------------------------------
- * 5. Embed 生成ヘルパー
- * -------------------------------------------------- */
+// Embed 生成ヘルパー
 export function makeEmbed(content, roleId, ROLE_CONFIG, attachmentURL = null) {
   const cfg = ROLE_CONFIG[roleId];
   if (!cfg) {
