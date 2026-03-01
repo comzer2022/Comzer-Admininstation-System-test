@@ -7,13 +7,13 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   const REQUIR_ROLE_ID = '1188422312823902229';
-  const WP_API_URL = 'https://comzer-gov.net/wp-json/custom/v1/citizen-info/'; // WPのURL
-  const API_KEY = 'BANANATOYOOGURUTOWOAWASERUTOOISI'
+  const WP_API_URL = 'https://comzer-gov.net/wp-json/custom/v1/citizen-info/';
+  const API_KEY = process.env.CASBOT_API_SECRET
 
   // ロールチェック
   if (!interaction.member.roles.cache.has(REQUIR_ROLE_ID)) {
     return await interaction.reply({
-      content: '❌ エラー：このコマンドを実行する権限がありません。',
+      content: 'エラー：このコマンドを実行する権限がありません。',
       ephemeral: true
     });
   }

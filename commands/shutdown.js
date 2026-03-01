@@ -48,9 +48,9 @@ export async function execute(interaction) {
           {},
           { headers: { Authorization: `Bearer ${apiToken}` } }
         );
-        console.log('[shutdown] Koyeb Pause API 呼び出し完了');
+        console.log('Koyeb Pause API 呼び出し完了');
       } else {
-        console.warn('[shutdown] KOYEB_API_TOKEN または KOYEB_APP_ID が未設定です。');
+        console.warn('KOYEB_API_TOKEN または KOYEB_APP_ID が未設定です。');
       }
     } catch (error) {
       console.error('エラーが発生しました:', error);
