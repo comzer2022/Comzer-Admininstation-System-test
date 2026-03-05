@@ -461,7 +461,7 @@ X-API-Key: <CASBOT_API_SECRET>
 {"discord_id":"1116002234208104479",
 "request_id":"1000",
 "request_name":"staff_appointment",
-"request_content":略,
+"request_content":"略",
 "created_at":"2026-03-05 16:32:23",
 "department":"大統領府事務局",
 "decision_event":"承認",
