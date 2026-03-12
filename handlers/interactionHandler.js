@@ -265,7 +265,6 @@ async function handleModalSubmit(interaction) {
   session.logs.push(`[${nowJST()}] version: ${version}, MCID: ${mcid}, 国籍: ${nation}`);
   session.logs.push(`[${nowJST()}] 期間: ${period}, 同行者: ${companions.join(',') || 'なし'}, 合流者: ${joiner || 'なし'}`);
 
-  // defer してから非同期審査を開始
   await interaction.deferReply();
   await interaction.editReply({ content: "申請内容を確認中…" });
   session.logs.push(`[${nowJST()}] Modal送信後、審査開始`);
