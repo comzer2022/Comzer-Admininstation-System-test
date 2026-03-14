@@ -18,7 +18,6 @@ export const data = new SlashCommandBuilder()
         { name: 'ON', value: 'on' },
         { name: 'OFF', value: 'off' }
       ))
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction) {
   // 実行者が許可されたロールを少なくとも1つ持っているか確認
