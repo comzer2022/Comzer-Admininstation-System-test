@@ -1,5 +1,5 @@
 import { REST, Routes } from 'discord.js';
-import config from '../config/config.json' assert { type: 'json' };
+import config from '../config/config.json' with { type: 'json' };
 import { data as rolepost }         from './embedPost.js';
 import { data as status }           from './status.js';
 import { data as shutdown }         from './shutdown.js';
