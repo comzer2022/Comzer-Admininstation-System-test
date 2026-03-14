@@ -29,7 +29,7 @@ export async function handleMessage(message, client) {
   if (
     message.mentions.has(client.user) &&
     String(message.channel.parentId) === String(TICKET_CAT) &&
-    /ID:CAS/.test(message.content)
+    /ID:CASTEST/.test(message.content)
   ) {
     await startImmigrationSession(message, client);
   }
