@@ -37,38 +37,33 @@ export async function handleMessage(message, client) {
 
 async function handleRolepostMessage(message, client) {
   const member = message.member;
-  let roleId = embedPost.getRoleId(message.channel.id, message.author.id);
+  const roleId = embedPost.getRoleId(message.channel.id, message.author.id);
 
-  if (!roleId) {
-    roleId = Object.keys(client.ROLE_CONFIG).find(r => member.roles.cache.has(r));
-  }
+  if (!roleId) return;
 
-  if (roleId) {
-    try {
-      const hook = await getOrCreateHook(message.channel, roleId);
-      const files = [...message.attachments.values()].map(att => ({ attachment: att.url }));
-      const firstImg = files.find(f => /\.(png|jpe?g|gif|webp)$/i.test(f.attachment));
+  try {
+    const hook = await getOrCreateHook(message.channel, roleId);
+    const files = [...message.attachments.values()].map(att => ({ attachment: att.url }));
+    const firstImg = files.find(f => /\.(png|jpe?g|gif|webp)$/i.test(f.attachment));
 
-      await hook.send({
-        embeds: [
-          embedPost.makeEmbed(
-            message.content || '(無言)',
-            roleId,
-            client.ROLE_CONFIG,
-            firstImg?.attachment
-          )
-        ],
-        files,
-        allowedMentions: { users: [], roles: [roleId] },
-      });
+    await hook.send({
+      embeds: [
+        embedPost.makeEmbed(
+          message.content || '(無言)',
+          roleId,
+          client.ROLE_CONFIG,
+          firstImg?.attachment
+        )
+      ],
+      files,
+      allowedMentions: { users: [], roles: [roleId] },
+    });
 
-      await message.delete().catch(() => {});
-    } catch (err) {
-      console.error('[rolepost] resend error:', err);
-    }
+    await message.delete().catch(() => {});
+  } catch (err) {
+    console.error('[rolepost] resend error:', err);
   }
 }
-
 async function startImmigrationSession(message, client) {
   const session = startSession(message.channel.id, message.author.id);
   session.logs.push(`[${nowJST()}] セッション開始`);
