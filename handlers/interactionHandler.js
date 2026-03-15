@@ -369,7 +369,7 @@ async function handleModalSubmit(interaction) {
   const reasonMsg = typeof result.content === "string"
     ? result.content
     : "申請内容に不備や却下条件があったため、審査が却下されました。";
-  await interaction.editReply({ embeds: [createRejectionEmbed({}, reasonMsg)] });
+  await interaction.editReply({ embeds: [createRejectionEmbed(result.parsed ?? {}, reasonMsg)] });
   return endSession(session.id, "却下", interaction.client);
   }
 // Embed 生成ヘルパー
