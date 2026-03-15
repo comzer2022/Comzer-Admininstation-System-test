@@ -58,7 +58,7 @@ async function handleRolepostMessage(message, client) {
   if (!cfg) return;
 
   try {
-    const hook = await getOrCreateHook(message.channel, roleId);
+    const hook = await getOrCreateHook(message.channel, roleId, cfg);
     const files = [...message.attachments.values()].map(att => ({ attachment: att.url }));
     const firstImg = files.find(f => /\.(png|jpe?g|gif|webp)$/i.test(f.attachment));
 
