@@ -74,7 +74,7 @@ export async function execute(interaction) {
 
     const uniqueMap = new Map();
     for (const item of matched) {
-      const uniqueKey = `${item.mode}:${item.rid}`;
+      const uniqueKey = item.mode;
       if (!uniqueMap.has(uniqueKey)) {
         uniqueMap.set(uniqueKey, item);
       }
