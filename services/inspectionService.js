@@ -48,7 +48,7 @@ export async function runInspection(content, session) {
     session.logs.push(`[${nowJST()}] ＜Blacklist(国)該当＞ ${parsed.nation}`);
     return {
       approved: false,
-      content: "申請された国籍は安全保障上の理由から入国を許可することができないため、却下します。"
+      content: "申請された国籍は安全保障上の理由から入国を許可することができないため、却下します。", parsed 
     };
   }
 
@@ -57,7 +57,7 @@ export async function runInspection(content, session) {
     session.logs.push(`[${nowJST()}] ＜Blacklist(プレイヤー)該当＞ ${parsed.mcid}`);
     return {
       approved: false,
-      content: "申請されたMCIDは安全保障上の理由から入国を許可することができないため、却下します。"
+      content: "申請されたMCIDは安全保障上の理由から入国を許可することができないため、却下します。", parsed 
     };
   }
 
@@ -80,7 +80,7 @@ export async function runInspection(content, session) {
   if (!exists) {
     return {
       approved: false,
-      content: `申請者MCID「${parsed.mcid}」のアカウントチェックが出来ませんでした。綴りにお間違いはございませんか?`
+      content: `申請者MCID「${parsed.mcid}」のアカウントチェックが出来ませんでした。綴りにお間違いはございませんか?`, parsed 
     };
   }
 
@@ -92,7 +92,7 @@ export async function runInspection(content, session) {
       if (await isBlacklistedPlayer(companionId)) {
         return {
           approved: false,
-          content: `同行者「${companionId}」は安全保障上の理由から入国を許可することができないため、却下します。`
+          content: `同行者「${companionId}」は安全保障上の理由から入国を許可することができないため、却下します。`, parsed 
         };
       }
 
@@ -115,7 +115,7 @@ export async function runInspection(content, session) {
       if (!exists) {
         return {
           approved: false,
-          content: `同行者MCID「${companionId}」のアカウントチェックが出来ませんでした。綴りにお間違いはございませんか?`
+          content: `同行者MCID「${companionId}」のアカウントチェックが出来ませんでした。綴りにお間違いはございませんか?`, parsed 
         };
       }
     }
@@ -166,7 +166,7 @@ export async function runInspection(content, session) {
       console.error("[JoinerCheck][Error] ネットワークエラー:", e.message);
       return {
         approved: false,
-        content: "合流者チェックの通信に失敗しました。ネットワークをご確認ください。"
+        content: "合流者チェックの通信に失敗しました。ネットワークをご確認ください。", parsed 
       };
     }
   }
@@ -179,7 +179,7 @@ export async function runInspection(content, session) {
   if (periodHours > 24 * 31) {
     return {
       approved: false,
-      content: "申請期間が長すぎるため却下します（申請期間が31日を超える場合、31日で申請後、申請が切れる前に再審査をお願いいたします。）"
+      content: "申請期間が長すぎるため却下します（申請期間が31日を超える場合、31日で申請後、申請が切れる前に再審査をお願いいたします。）", parsed
     };
   }
 
@@ -187,7 +187,7 @@ export async function runInspection(content, session) {
   if (!parsed.mcid || !parsed.nation || !parsed.purpose || !parsed.start_datetime || !parsed.end_datetime) {
     return {
       approved: false,
-      content: "申請情報に不足があります。全項目を入力してください。"
+      content: "申請情報に不足があります。全項目を入力してください。", parsed 
     };
   }
 
