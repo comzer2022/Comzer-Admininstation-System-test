@@ -62,11 +62,17 @@ async function handleRolepostMessage(message, client) {
   const cfg = Object.values(client.ROLE_CONFIG).find(c => c.embedName === embedName);
   if (!cfg) return;
 
+  console.log('[rolepost] cfg found:', cfg?.embedName, cfg?.webhookName);
+
   try {
+    console.log('[rolepost] getOrCreateHook 開始');
     const hook = await getOrCreateHook(message.channel, roleId, cfg);
+    console.log('[rolepost] hook取得成功:', hook?.id);
+
     const files = [...message.attachments.values()].map(att => ({ attachment: att.url }));
     const firstImg = files.find(f => /\.(png|jpe?g|gif|webp)$/i.test(f.attachment));
 
+    console.log('[rolepost] hook.send 開始');
     await hook.send({
       username: cfg.webhookName,
       avatarURL: cfg.webhookIcon,
@@ -74,19 +80,21 @@ async function handleRolepostMessage(message, client) {
         embedPost.makeEmbed(
           message.content || '(無言)',
           roleId,
-          { [roleId]: cfg },  // 正しい cfg を直接渡す
+          { [roleId]: cfg },
           firstImg?.attachment
         )
       ],
       files,
       allowedMentions: { users: [], roles: [roleId] },
     });
+    console.log('[rolepost] hook.send 完了');
 
     await message.delete().catch(() => {});
   } catch (err) {
-    console.error('[rolepost] resend error:', err);
+    console.error('[rolepost] resend error code:', err?.code);
+    console.error('[rolepost] resend error message:', err?.message);
+    console.error('[rolepost] resend error stack:', err?.stack);
   }
-}
 
 async function startImmigrationSession(message, client) {
   const session = startSession(message.channel.id, message.author.id);
