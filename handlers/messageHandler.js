@@ -44,28 +44,29 @@ async function handleRolepostMessage(message, client) {
   const mode = stored.slice(0, colonIdx);
   const roleId = stored.slice(colonIdx + 1);
 
-  // mode から直接 roleId のリストを取得して ROLE_CONFIG を引く
-  const modeToEnvKey = {
+  // mode から直接 cfg を決定（ROLE_CONFIG のキー上書き問題を完全回避）
+  const modeToCfgKey = {
     minister: 'ROLLID_MINISTER',
     diplomat: 'ROLLID_DIPLOMAT',
     examiner: 'EXAMINER_ROLE_IDS',
   };
-  const envKey = modeToEnvKey[mode];
+  const envKey = modeToCfgKey[mode];
   if (!envKey) return;
 
-  const candidateIds = (process.env[envKey] || '').split(',').map(s => s.trim()).filter(Boolean);
-  let cfg = null;
-  for (const rid of candidateIds) {
-    if (client.ROLE_CONFIG[rid]) {
-      cfg = client.ROLE_CONFIG[rid];
-      break;
-    }
-  }
+  // roleConfig.js と同じ cfg を mode ベースで直接構築
+  const DIPLOMAT_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview';
+  const MINISTER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/qGWt4rftd9ygKdi/preview';
+  const EXAMINER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/NEsrzngYJEHZwTn/preview';
+  const COMZER_ICON_URL   = 'https://www.comzer-gov.net/database/index.php/s/2DfeR3dTWdtCrgq/preview';
 
-  if (!cfg) {
-    console.error('[rolepost] cfg not found for mode:', mode, 'candidates:', candidateIds);
-    return;
-  }
+  const modeCfgMap = {
+    minister: { embedName: '閣僚会議議員',                   embedIcon: MINISTER_ICON_URL, webhookName: 'コムザール連邦共和国 大統領府', webhookIcon: COMZER_ICON_URL },
+    diplomat: { embedName: '外交官(外務省 総合外務部職員)',   embedIcon: DIPLOMAT_ICON_URL, webhookName: 'コムザール連邦共和国 外務省',   webhookIcon: DIPLOMAT_ICON_URL },
+    examiner: { embedName: '入国審査担当官',                  embedIcon: EXAMINER_ICON_URL, webhookName: 'コムザール連邦共和国 大統領府', webhookIcon: COMZER_ICON_URL },
+  };
+
+  const cfg = modeCfgMap[mode];
+  if (!cfg) return;
 
   try {
     const hook = await getOrCreateHook(message.channel, roleId, cfg);
@@ -75,14 +76,7 @@ async function handleRolepostMessage(message, client) {
     await hook.send({
       username: cfg.webhookName,
       avatarURL: cfg.webhookIcon,
-      embeds: [
-        embedPost.makeEmbed(
-          message.content || '(無言)',
-          roleId,
-          { [roleId]: cfg },
-          firstImg?.attachment
-        )
-      ],
+      embeds: [embedPost.makeEmbed(message.content || '(無言)', roleId, { [roleId]: cfg }, firstImg?.attachment)],
       files,
       allowedMentions: { users: [], roles: [roleId] },
     });
