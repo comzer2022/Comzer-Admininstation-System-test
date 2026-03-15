@@ -44,6 +44,11 @@ async function handleRolepostMessage(message, client) {
   const mode = stored.slice(0, colonIdx);
   const roleId = stored.slice(colonIdx + 1);
 
+  console.log('[rolepost] stored:', stored);
+  console.log('[rolepost] mode:', mode, '/ roleId:', roleId);
+  console.log('[rolepost] ROLE_CONFIG keys:', Object.keys(client.ROLE_CONFIG));
+  console.log('[rolepost] ROLLID_MINISTER env:', process.env.ROLLID_MINISTER);
+
   // mode から embedName を解決（ROLE_CONFIG のキー問題を回避）
   const modeToEmbedName = {
     minister: '閣僚会議議員',
