@@ -44,35 +44,34 @@ async function handleRolepostMessage(message, client) {
   const mode = stored.slice(0, colonIdx);
   const roleId = stored.slice(colonIdx + 1);
 
-  console.log('[rolepost] stored:', stored);
-  console.log('[rolepost] mode:', mode, '/ roleId:', roleId);
-  console.log('[rolepost] ROLE_CONFIG keys:', Object.keys(client.ROLE_CONFIG));
-  console.log('[rolepost] ROLLID_MINISTER env:', process.env.ROLLID_MINISTER);
-
-  // mode から embedName を解決（ROLE_CONFIG のキー問題を回避）
-  const modeToEmbedName = {
-    minister: '閣僚会議議員',
-    diplomat: '外交官(外務省 総合外務部職員)',
-    examiner: '入国審査担当官',
+  // mode から直接 roleId のリストを取得して ROLE_CONFIG を引く
+  const modeToEnvKey = {
+    minister: 'ROLLID_MINISTER',
+    diplomat: 'ROLLID_DIPLOMAT',
+    examiner: 'EXAMINER_ROLE_IDS',
   };
-  const embedName = modeToEmbedName[mode];
-  if (!embedName) return;
+  const envKey = modeToEnvKey[mode];
+  if (!envKey) return;
 
-  // embedName で ROLE_CONFIG を逆引きして正しい cfg を取得
-  const cfg = Object.values(client.ROLE_CONFIG).find(c => c.embedName === embedName);
-  if (!cfg) return;
+  const candidateIds = (process.env[envKey] || '').split(',').map(s => s.trim()).filter(Boolean);
+  let cfg = null;
+  for (const rid of candidateIds) {
+    if (client.ROLE_CONFIG[rid]) {
+      cfg = client.ROLE_CONFIG[rid];
+      break;
+    }
+  }
 
-  console.log('[rolepost] cfg found:', cfg?.embedName, cfg?.webhookName);
+  if (!cfg) {
+    console.error('[rolepost] cfg not found for mode:', mode, 'candidates:', candidateIds);
+    return;
+  }
 
   try {
-    console.log('[rolepost] getOrCreateHook 開始');
     const hook = await getOrCreateHook(message.channel, roleId, cfg);
-    console.log('[rolepost] hook取得成功:', hook?.id);
-
     const files = [...message.attachments.values()].map(att => ({ attachment: att.url }));
     const firstImg = files.find(f => /\.(png|jpe?g|gif|webp)$/i.test(f.attachment));
 
-    console.log('[rolepost] hook.send 開始');
     await hook.send({
       username: cfg.webhookName,
       avatarURL: cfg.webhookIcon,
@@ -87,13 +86,10 @@ async function handleRolepostMessage(message, client) {
       files,
       allowedMentions: { users: [], roles: [roleId] },
     });
-    console.log('[rolepost] hook.send 完了');
 
     await message.delete().catch(() => {});
   } catch (err) {
-    console.error('[rolepost] resend error code:', err?.code);
-    console.error('[rolepost] resend error message:', err?.message);
-    console.error('[rolepost] resend error stack:', err?.stack);
+    console.error('[rolepost] resend error:', err.message);
   }
 }
 
