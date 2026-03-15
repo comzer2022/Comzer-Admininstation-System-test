@@ -339,37 +339,39 @@ async function handleModalSubmit(interaction) {
     return;
   }
 
-  // 承認・却下の処理
-  let embedData = {};
-  if (typeof result.content === "object") {
-    embedData = result.content;
-  } else {
-    try {
-      embedData = JSON.parse(result.content);
-      const rawPeriod = embedData.period ?? embedData.期間;
-      if (rawPeriod && (!embedData.start_datetime || !embedData.end_datetime)) {
-        embedData.start_datetime = embedData.start_datetime || rawPeriod;
-        embedData.end_datetime   = embedData.end_datetime   || rawPeriod;
+// 承認・却下の処理
+  if (result.approved) {
+    let embedData = {};
+    if (typeof result.content === "object") {
+      embedData = result.content;
+    } else {
+      try {
+        embedData = JSON.parse(result.content);
+        const rawPeriod = embedData.period ?? embedData.期間;
+        if (rawPeriod && (!embedData.start_datetime || !embedData.end_datetime)) {
+          embedData.start_datetime = embedData.start_datetime || rawPeriod;
+          embedData.end_datetime   = embedData.end_datetime   || rawPeriod;
+        }
+      } catch (e) {
+        console.error("[ERROR] JSON parse failed:", e);
+        embedData = {};
       }
-    } catch (e) {
-      console.error("[ERROR] JSON parse failed:", e);
-      embedData = {};
+    }
+
+    if (Object.keys(embedData).length) {
+      await interaction.editReply({ embeds: [createApprovalEmbed(embedData)] });
+      await publishApproval(embedData, interaction.client);
+      return endSession(session.id, "承認", interaction.client);
     }
   }
 
-  if (result.approved && Object.keys(embedData).length) {
-    await interaction.editReply({ embeds: [createApprovalEmbed(embedData)] });
-    await publishApproval(embedData, interaction.client);
-    return endSession(session.id, "承認", interaction.client);
-  } else {
-    const reasonMsg = typeof result.content === "string"
-      ? result.content
-      : "申請内容に不備や却下条件があったため、審査が却下されました。";
-    await interaction.editReply({ embeds: [createRejectionEmbed(embedData, reasonMsg)] });
-    return endSession(session.id, "却下", interaction.client);
+  // 却下（approved: false または embedData が空）
+  const reasonMsg = typeof result.content === "string"
+    ? result.content
+    : "申請内容に不備や却下条件があったため、審査が却下されました。";
+  await interaction.editReply({ embeds: [createRejectionEmbed({}, reasonMsg)] });
+  return endSession(session.id, "却下", interaction.client);
   }
-}
-
 // Embed 生成ヘルパー
 function createApprovalEmbed(parsed) {
   const today = new Date().toISOString().slice(0, 10);
