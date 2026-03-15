@@ -36,10 +36,11 @@ export async function handleMessage(message, client) {
 }
 
 async function handleRolepostMessage(message, client) {
-  const member = message.member;
   const roleId = embedPost.getRoleId(message.channel.id, message.author.id);
-
   if (!roleId) return;
+
+  const cfg = client.ROLE_CONFIG[roleId];
+  if (!cfg) return;
 
   try {
     const hook = await getOrCreateHook(message.channel, roleId);
@@ -47,6 +48,8 @@ async function handleRolepostMessage(message, client) {
     const firstImg = files.find(f => /\.(png|jpe?g|gif|webp)$/i.test(f.attachment));
 
     await hook.send({
+      username: cfg.webhookName,
+      avatarURL: cfg.webhookIcon,
       embeds: [
         embedPost.makeEmbed(
           message.content || '(無言)',
@@ -64,6 +67,7 @@ async function handleRolepostMessage(message, client) {
     console.error('[rolepost] resend error:', err);
   }
 }
+
 async function startImmigrationSession(message, client) {
   const session = startSession(message.channel.id, message.author.id);
   session.logs.push(`[${nowJST()}] セッション開始`);
