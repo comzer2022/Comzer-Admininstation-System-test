@@ -85,9 +85,10 @@ export async function execute(interaction) {
       return interaction.editReply('対象の役職ロールを保有していません。');
     }
 
+    // 単一ロール一致時
     if (uniqueMatched.length === 1) {
-      const { rid, modeLabel } = uniqueMatched[0];
-      setActive(channelId, userId, rid);
+      const { mode, rid, modeLabel } = uniqueMatched[0];
+      setActive(channelId, userId, `${mode}:${rid}`);  // ← mode:roleId で保存
       return interaction.editReply(`役職発言モードを **ON** にしました。（${modeLabel}）`);
     }
 
@@ -134,8 +135,7 @@ export async function handleRolepostSelect(interaction) {
     }
 
     const [mode, roleId] = interaction.values[0].split(':');
-    setActive(channelId, userId, roleId);
-
+    setActive(channelId, userId, `${mode}:${roleId}`);
     const modeName = mode === 'diplomat' ? '外交官(外務省 総合外務部職員)' : 
                      mode === 'minister' ? '閣僚会議議員' : '入国審査担当官';
 
