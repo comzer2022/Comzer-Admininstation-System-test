@@ -36,10 +36,25 @@ export async function handleMessage(message, client) {
 }
 
 async function handleRolepostMessage(message, client) {
-  const roleId = embedPost.getRoleId(message.channel.id, message.author.id);
-  if (!roleId) return;
+  const stored = embedPost.getRoleId(message.channel.id, message.author.id);
+  if (!stored) return;
 
-  const cfg = client.ROLE_CONFIG[roleId];
+  const colonIdx = stored.indexOf(':');
+  if (colonIdx === -1) return;
+  const mode = stored.slice(0, colonIdx);
+  const roleId = stored.slice(colonIdx + 1);
+
+  // mode から embedName を解決（ROLE_CONFIG のキー問題を回避）
+  const modeToEmbedName = {
+    minister: '閣僚会議議員',
+    diplomat: '外交官(外務省 総合外務部職員)',
+    examiner: '入国審査担当官',
+  };
+  const embedName = modeToEmbedName[mode];
+  if (!embedName) return;
+
+  // embedName で ROLE_CONFIG を逆引きして正しい cfg を取得
+  const cfg = Object.values(client.ROLE_CONFIG).find(c => c.embedName === embedName);
   if (!cfg) return;
 
   try {
@@ -54,7 +69,7 @@ async function handleRolepostMessage(message, client) {
         embedPost.makeEmbed(
           message.content || '(無言)',
           roleId,
-          client.ROLE_CONFIG,
+          { [roleId]: cfg },  // 正しい cfg を直接渡す
           firstImg?.attachment
         )
       ],
