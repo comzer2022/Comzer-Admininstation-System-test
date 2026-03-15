@@ -3,9 +3,9 @@ const MINISTER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/qGWt4
 const EXAMINER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/NEsrzngYJEHZwTn/preview';
 const COMZER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/2DfeR3dTWdtCrgq/preview';
 
-const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').filter(Boolean);
-const MINISTER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').filter(Boolean);
-const EXAMINER_ROLE_IDS = (process.env.EXAMINER_ROLE_IDS || '').split(',').filter(Boolean);
+const DIPLOMAT_ROLE_IDS = (process.env.ROLLID_DIPLOMAT || '').split(',').map(s => s.trim()).filter(Boolean);
+const MINISTER_ROLE_IDS = (process.env.ROLLID_MINISTER || '').split(',').map(s => s.trim()).filter(Boolean);
+const EXAMINER_ROLE_IDS = (process.env.EXAMINER_ROLE_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
 
 export const ROLE_CONFIG = {
   ...Object.fromEntries(
