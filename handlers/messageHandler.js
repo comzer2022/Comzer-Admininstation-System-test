@@ -95,6 +95,7 @@ async function handleRolepostMessage(message, client) {
     console.error('[rolepost] resend error message:', err?.message);
     console.error('[rolepost] resend error stack:', err?.stack);
   }
+}
 
 async function startImmigrationSession(message, client) {
   const session = startSession(message.channel.id, message.author.id);
