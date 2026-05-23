@@ -12,11 +12,20 @@ export function messagelog(message, ticketCat, client) {
   const mentionsBot = client?.user ? message.mentions.has(client.user) : false;
   const contentPreview = message.content?.slice(0, 80) ?? '';
 
+  // 投稿日時を JST で整形
+  const createdAt = message.createdAt
+    ? message.createdAt.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+    : 'unknown';
+
   console.log(
-    `[MSG] channelId:${channelId} channelName:${channelName} ` +
-    `parentId:${parentId} authorId:${authorId} ` +
-    `TICKET_CAT:${ticketCat ?? 'none'} mentions.has(bot):${mentionsBot} ` +
-    `content:${contentPreview}`
+    `parentId: ${parentId} （型： ${typeof parentId} ）\n` +
+    `TICKET_CAT: ${ticketCat ?? 'none'} （型： ${typeof ticketCat} ）\n` +
+    `mentions.has(bot.user): ${mentionsBot}\n` +
+    `authorId: ${authorId}\n` +
+    `channelId: ${channelId} channelName: ${channelName}\n` +
+    `createdAt: ${createdAt}\n` +
+    `parentId: ${parentId} （型： ${typeof parentId} ）\n` +
+    `content：${contentPreview}`
   );
 }
 export function logDebugInfo(label, ...args) {
