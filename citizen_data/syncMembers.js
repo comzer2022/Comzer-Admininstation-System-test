@@ -43,7 +43,7 @@ export async function fullSync(client, throttleMs = 1000) {
     try {
       await syncMember(m);
     } catch (e) {
-      console.error('m.id, 'failed:', e.message);
+      console.error(m.id, 'failed:', e.message);
     }
     const jitter = Math.floor(Math.random() * 250);
     await new Promise(r => setTimeout(r, throttleMs + jitter));
