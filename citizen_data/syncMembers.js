@@ -13,7 +13,7 @@ export async function syncMember(m) {
   const user = m.user ?? await m.fetch().then(fm => fm.user);
   
   if (!user?.username) {
-    console.warn('[syncMember] skip: username missing', m.id);
+    console.warn('skip: username missing', m.id);
     return null;
   }
 
@@ -29,7 +29,7 @@ export async function syncMember(m) {
   };
 
   const res = await upsertMember(payload);
-  console.log('[syncMember]', m.id, user.username, res.status);
+  console.log('m.id, user.username, res.status);
   return res;
 }
 
@@ -38,19 +38,14 @@ export async function fullSync(client, throttleMs = 1000) {
 
   // limit なしで fetch → Discord.js が自動でチャンク分割して全件取得
   const members = await g.members.fetch();
-
-  console.log(`[fullSync] Start syncing ${members.size} members...`);
-
   for (const m of members.values()) {
     if (m.user?.bot) continue;
     try {
       await syncMember(m);
     } catch (e) {
-      console.error('[fullSync] member', m.id, 'failed:', e.message);
+      console.error('m.id, 'failed:', e.message);
     }
     const jitter = Math.floor(Math.random() * 250);
     await new Promise(r => setTimeout(r, throttleMs + jitter));
   }
-
-  console.log('[fullSync] Completed.');
 }
