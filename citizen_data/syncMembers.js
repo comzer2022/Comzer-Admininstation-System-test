@@ -29,7 +29,7 @@ export async function syncMember(m) {
   };
 
   const res = await upsertMember(payload);
-  console.log('m.id, user.username, res.status);
+  console.log(m.id, user.username, res.status);
   return res;
 }
 
