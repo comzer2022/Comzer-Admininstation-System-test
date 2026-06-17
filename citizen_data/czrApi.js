@@ -1,6 +1,5 @@
 import crypto from 'node:crypto';
 import fetch from 'node-fetch';
-
 const BASE   = process.env.CZR_BASE;
 const KEY    = process.env.CZR_KEY || 'casbot';
 const SECRET = process.env.CZR_SECRET;
@@ -36,12 +35,28 @@ async function fetchWithRetry(url, init, { attempts = 5, baseDelay = 500 } = {})
   }
   throw lastErr;
 }
-
 export async function upsertMember(payload) {
   const body = JSON.stringify(payload);
   const { ts, sig } = sign(body);
   const res = await fetchWithRetry(`${BASE}/wp-json/czr-bridge/v1/ledger/member`, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'User-Agent': 'CASBOT/1.0 (+Koyeb)',
+      'X-CZR-Key': KEY,
+      'X-CZR-Ts': String(ts),
+      'X-CZR-Sign': sig,
+    },
+    body,
+  });
+  return res.json();
+}
+export async function deleteAbsentMembers(payload) {
+  const body = JSON.stringify(payload);
+  const { ts, sig } = sign(body);
+  const res = await fetchWithRetry(`${BASE}/wp-json/czr-bridge/v1/ledger/absent-members`, {
+    method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
