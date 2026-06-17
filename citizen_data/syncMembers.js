@@ -65,7 +65,7 @@ export async function fullSync(client, throttleMs = 1000) {
   // ===== 離脱メンバーの削除 =====
   await purgeAbsentMembers(syncedIds);
 
-  console.log('[fullSync] Completed.');
+  console.log('Successed');
 }
 
 /**
@@ -89,7 +89,7 @@ async function purgeAbsentMembers(syncedIds) {
       discord_ids: [...syncedIds],
     });
   } catch (e) {
-    console.error('Failed:', e.message);
+    console.error(`Failed:`, e.message);
     return;
   }
 
