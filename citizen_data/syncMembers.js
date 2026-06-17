@@ -94,8 +94,8 @@ async function purgeAbsentMembers(syncedIds) {
   }
 
   const { deleted_count = 0, deleted_ids = [] } = result;
-  console.log('Deleted ${deleted_count} absent member(s).`);
-  for (const id of deleted_ids) {
+  console.log(`Deleted ${deleted_count} absent member(s).`);
+  for (const id of dleted_ids) {
     console.log('removed', id);
   }
 }
