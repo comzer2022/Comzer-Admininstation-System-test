@@ -52,7 +52,7 @@ export async function fullSync(client, throttleMs = 1000) {
         syncedIds.add(m.id);
       }
     } catch (e) {
-      console.error('m.id, 'failed:', e.message);
+      console.error(m.id, 'failed:', e.message);
       // 失敗したメンバーは syncedIds に追加しない
       // → 一時的なエラーでも削除対象にならないよう保守的に扱う
     }
