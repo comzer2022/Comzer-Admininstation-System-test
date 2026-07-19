@@ -1,30 +1,30 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import axios from 'axios';
 
-export const data = new SlashCommandBuilder()
-  .setName('shutdown')
-  .setDescription('ボットを停止します');
+export const data = new SlashCommandBuilder().setName('shutdown').setDescription('ボットを停止します');
 
-export async function execute(interaction) {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<unknown> {
   const allowedRoleIds = (process.env.STOP_ROLE_IDS || '')
     .split(',')
-    .map(id => id.trim())
+    .map((id) => id.trim())
     .filter(Boolean);
 
-  let executorRoleIds = [];
+  let executorRoleIds: string[] = [];
   if (interaction.guildId) {
-    executorRoleIds = interaction.member.roles.cache.map(r => r.id);
+    const member = interaction.member;
+    executorRoleIds =
+      member && 'cache' in member.roles ? member.roles.cache.map((r) => r.id) : [];
   } else {
-    const refGuildId = "1188411576483590194";
+    const refGuildId = '1188411576483590194';
     if (!refGuildId) {
-      throw new Error("REFERENCE_GUILD_IDが設定されていません");
+      throw new Error('REFERENCE_GUILD_IDが設定されていません');
     }
     const guild = await interaction.client.guilds.fetch(refGuildId);
     const member = await guild.members.fetch(interaction.user.id);
-    executorRoleIds = member.roles.cache.map(r => r.id);
+    executorRoleIds = member.roles.cache.map((r) => r.id);
   }
 
-  const isAllowed = allowedRoleIds.some(rid => executorRoleIds.includes(rid));
+  const isAllowed = allowedRoleIds.some((rid) => executorRoleIds.includes(rid));
   if (!isAllowed) {
     return interaction.reply({
       content: '⚠️ このコマンドを実行する権限がありません。',
@@ -41,7 +41,7 @@ export async function execute(interaction) {
     try {
       interaction.client.destroy();
       const apiToken = process.env.KOYEB_API_TOKEN;
-      const appId    = process.env.KOYEB_APP_ID;
+      const appId = process.env.KOYEB_APP_ID;
       if (apiToken && appId) {
         await axios.post(
           `https://api.koyeb.com/v1/apps/${appId}/actions/pause`,
