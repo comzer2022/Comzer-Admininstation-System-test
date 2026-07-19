@@ -1,4 +1,4 @@
-export const extractionPrompt = `
+export const extractionPrompt: string = `
 以下の日本語テキストから、下記の情報をJSONで返してください。
 * 申請者のMCID（mcid）
 * 国籍（nation）
