@@ -1,30 +1,37 @@
+import type { Client } from 'discord.js';
 import { nowJST } from '../utils/helpers.js';
+import type { Session, SessionEndStatus } from '../types/domain.js';
 
-const sessions = new Map();
-const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
+const sessions = new Map<string, Session>();
+const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID as string;
 
 // bot (client) を保持するための参照
-let _botClient = null;
+let _botClient: Client | null = null;
 
-export function setBotClient(client) {
+export function setBotClient(client: Client): void {
   _botClient = client;
 }
 
-export function startSession(channelId, userId) {
+export function startSession(channelId: string, userId: string): Session {
   const id = `${channelId}-${userId}-${Date.now()}`;
-  sessions.set(id, {
+  const session: Session = {
     id,
     channelId,
     userId,
     step: 'intro',
     data: {},
     logs: [],
-    lastAction: Date.now()
-  });
-  return sessions.get(id);
+    lastAction: Date.now(),
+  };
+  sessions.set(id, session);
+  return session;
 }
 
-export async function endSession(id, status, bot) {
+export async function endSession(
+  id: string,
+  status: SessionEndStatus,
+  bot?: Client | null
+): Promise<void> {
   const session = sessions.get(id);
   if (!session) return;
 
@@ -34,14 +41,17 @@ export async function endSession(id, status, bot) {
   session.status = status;
   session.logs.push(`[${nowJST()}] セッション終了: ${status}`);
 
-  const text = session.logs.join("\n");
+  const text = session.logs.join('\n');
   const buffer = Buffer.from(text, 'utf8');
-  const channelName = client?.channels.cache.get(session.channelId)?.name || session.channelId;
+  const targetChannel = client?.channels.cache.get(session.channelId);
+  const channelName =
+    (targetChannel && 'name' in targetChannel ? targetChannel.name : null) ||
+    session.channelId;
   const fileName = `${channelName}-一時入国審査.txt`;
 
   if (client) {
     const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
-    if (logChannel?.isTextBased()) {
+    if (logChannel?.isTextBased() && 'send' in logChannel) {
       try {
         await logChannel.send({
           content: `セッション ${session.id} が ${status} しました。詳細ログを添付します。`,
@@ -58,15 +68,15 @@ export async function endSession(id, status, bot) {
   sessions.delete(id);
 }
 
-export function getSession(id) {
+export function getSession(id: string): Session | undefined {
   return sessions.get(id);
 }
 
-export function getAllSessions() {
+export function getAllSessions(): Map<string, Session> {
   return sessions;
 }
 
-export function updateSessionLastAction(id) {
+export function updateSessionLastAction(id: string): void {
   const session = sessions.get(id);
   if (session) {
     session.lastAction = Date.now();
