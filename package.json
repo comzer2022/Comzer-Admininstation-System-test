@@ -7,10 +7,10 @@
   },
   "scripts": {
     "build": "tsc",
-    "prestart": "npm run build && npm run deploy",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
-    "deploy": "node dist/commands/deploy-commands.js"
+    "deploy": "node dist/commands/deploy-commands.js",
+    "postbuild": "npm run deploy"
   },
   "dependencies": {
     "axios": "^1.7.2",
