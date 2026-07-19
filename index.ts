@@ -1,10 +1,10 @@
 import './utils/logger/index.js';
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import express from 'express';
 import bodyParser from 'body-parser';
 import { ROLE_CONFIG } from './config/roleConfig.js';
 import { setupNotificationAPI } from './services/notificationqueue.js';
-import { registerEventHandlers } from './handlers/eventhandlers.js'; 
+import { registerEventHandlers } from './handlers/eventhandlers.js';
 import { initBlacklist } from './utils/blacklistManager.js';
 import * as embedPost from './commands/embedPost.js';
 import * as statusCommand from './commands/status.js';
@@ -12,8 +12,12 @@ import * as debugCommand from './commands/debug.js';
 import { data as shutdownData, execute as shutdownExec } from './commands/shutdown.js';
 import { data as startData, execute as startExec } from './commands/start.js';
 import { data as infoData, execute as infoExecute } from './commands/info.js';
-import { data as deleteRolepostData, execute as deleteRolepostExec } from './commands/deleteRolepost.js';
+import {
+  data as deleteRolepostData,
+  execute as deleteRolepostExec,
+} from './commands/deleteRolepost.js';
 import * as deployCommand from './commands/deploy.js';
+import type { BotCommand } from './types/commands.js';
 
 const client = new Client({
   intents: [
@@ -24,20 +28,20 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
   ],
-  partials: ['CHANNEL']
+  partials: [Partials.Channel],
 });
 
 client.ROLE_CONFIG = ROLE_CONFIG;
 
-client.commands = new Map([
-  [embedPost.data.name,          embedPost],
-  [statusCommand.data.name,      statusCommand],
-  [shutdownData.name,            { data: shutdownData, execute: shutdownExec }],
-  [startData.name,               { data: startData, execute: startExec }],
-  [infoData.name,                { data: infoData, execute: infoExecute }],
-  [debugCommand.data.name,       debugCommand],
-  [deleteRolepostData.name,      { data: deleteRolepostData, execute: deleteRolepostExec }],
-  [deployCommand.data.name,      deployCommand],
+client.commands = new Map<string, BotCommand>([
+  [embedPost.data.name, embedPost],
+  [statusCommand.data.name, statusCommand],
+  [shutdownData.name, { data: shutdownData, execute: shutdownExec }],
+  [startData.name, { data: startData, execute: startExec }],
+  [infoData.name, { data: infoData, execute: infoExecute }],
+  [debugCommand.data.name, debugCommand],
+  [deleteRolepostData.name, { data: deleteRolepostData, execute: deleteRolepostExec }],
+  [deployCommand.data.name, deployCommand],
 ]);
 
 registerEventHandlers(client);
@@ -48,7 +52,7 @@ app.use(bodyParser.json());
 
 setupNotificationAPI(app, client);
 
-app.get('/', (req, res) => res.send('OK'));
+app.get('/', (_req, res) => res.send('OK'));
 
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 
