@@ -1,10 +1,12 @@
+import type { Interaction } from 'discord.js';
 import * as addCountry from './addCountry.js';
 import * as removeCountry from './removeCountry.js';
 import * as addPlayer from './addPlayer.js';
 import * as removePlayer from './removePlayer.js';
 import * as listBlacklist from './listBlacklist.js';
+import type { SlashCommandLike } from '../../types/commands.js';
 
-export const commands = [
+export const commands: SlashCommandLike[] = [
   addCountry.data,
   removeCountry.data,
   addPlayer.data,
@@ -12,7 +14,7 @@ export const commands = [
   listBlacklist.data,
 ];
 
-export async function handleCommands(interaction) {
+export async function handleCommands(interaction: Interaction): Promise<boolean> {
   if (!interaction.isChatInputCommand()) return false;
 
   const commandName = interaction.commandName;
