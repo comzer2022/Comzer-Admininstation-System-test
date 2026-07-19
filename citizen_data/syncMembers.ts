@@ -1,21 +1,22 @@
-import { upsertMember, deleteAbsentMembers } from './czrApi.js';
+import type { Client, GuildMember } from 'discord.js';
+import { upsertMember, deleteAbsentMembers, UpsertMemberResponse } from './czrApi.js';
 
-const GUILD_ID      = '1188411576483590194';
+const GUILD_ID = '1188411576483590194';
 const ROLE_DIPLOMAT = '1188429176739479562';
 
 // fullSync 中に fetch に失敗したメンバーを除外するため、
 // 実際に同期できた discord_id だけを追跡する
 const MIN_SYNCED_THRESHOLD = 10; // この件数未満なら削除ステップをスキップ（誤削除防止）
 
-export function inferGroupFromRoles(roleIds) {
+export function inferGroupFromRoles(roleIds: string[]): 'diplomat' | 'citizen' {
   if (roleIds.includes(ROLE_DIPLOMAT)) return 'diplomat';
   return 'citizen';
 }
 
-export async function syncMember(m) {
+export async function syncMember(m: GuildMember): Promise<UpsertMemberResponse | null> {
   // user が取れていない partial メンバーは強制的に fetch
-  const user = m.user ?? await m.fetch().then(fm => fm.user);
-  
+  const user = m.user ?? (await m.fetch().then((fm) => fm.user));
+
   if (!user?.username) {
     console.warn('skip: username missing', m.id);
     return null;
@@ -24,11 +25,11 @@ export async function syncMember(m) {
   const roles = [...m.roles.cache.keys()];
 
   const payload = {
-    guild_id:     GUILD_ID,
-    discord_id:   m.id,
+    guild_id: GUILD_ID,
+    discord_id: m.id,
     discord_name: user.username,
     display_name: m.displayName ?? user.username,
-    group:        inferGroupFromRoles(roles),
+    group: inferGroupFromRoles(roles),
     roles,
   };
 
@@ -37,12 +38,12 @@ export async function syncMember(m) {
   return res;
 }
 
-export async function fullSync(client, throttleMs = 1000) {
+export async function fullSync(client: Client, throttleMs = 1000): Promise<void> {
   const g = await client.guilds.fetch(GUILD_ID);
   // limit なしで fetch → Discord.js が自動でチャンク分割して全件取得
   const members = await g.members.fetch();
   // 今回サーバーに実際に存在し、同期成功した discord_id を記録する
-  const syncedIds = new Set();
+  const syncedIds = new Set<string>();
   for (const m of members.values()) {
     if (m.user?.bot) continue;
     try {
@@ -52,12 +53,12 @@ export async function fullSync(client, throttleMs = 1000) {
         syncedIds.add(m.id);
       }
     } catch (e) {
-      console.error(m.id, 'failed:', e.message);
+      console.error(m.id, 'failed:', e instanceof Error ? e.message : e);
       // 失敗したメンバーは syncedIds に追加しない
       // → 一時的なエラーでも削除対象にならないよう保守的に扱う
     }
     const jitter = Math.floor(Math.random() * 250);
-    await new Promise(r => setTimeout(r, throttleMs + jitter));
+    await new Promise((r) => setTimeout(r, throttleMs + jitter));
   }
 
   console.log(`Synced: ${syncedIds.size} members.`);
@@ -65,16 +66,14 @@ export async function fullSync(client, throttleMs = 1000) {
   // ===== 離脱メンバーの削除 =====
   await purgeAbsentMembers(syncedIds);
 
-  console.log('Successed');
+  console.log('[fullSync] Completed.');
 }
 
 /**
  * サーバーに存在しない（= syncedIds に含まれない）メンバーを DB から削除し、
  * 削除されたメンバーの一覧を Discord Webhook でログに送信する。
- *
- * @param {Set<string>} syncedIds - 今回サーバーに存在が確認された discord_id の Set
  */
-async function purgeAbsentMembers(syncedIds) {
+async function purgeAbsentMembers(syncedIds: Set<string>): Promise<void> {
   if (syncedIds.size < MIN_SYNCED_THRESHOLD) {
     console.warn(
       `Skipped: synced count (${syncedIds.size}) is below threshold (${MIN_SYNCED_THRESHOLD}).`
@@ -85,11 +84,11 @@ async function purgeAbsentMembers(syncedIds) {
   let result;
   try {
     result = await deleteAbsentMembers({
-      guild_id:    GUILD_ID,
+      guild_id: GUILD_ID,
       discord_ids: [...syncedIds],
     });
   } catch (e) {
-    console.error(`Failed:`, e.message);
+    console.error('Failed:', e instanceof Error ? e.message : e);
     return;
   }
 
