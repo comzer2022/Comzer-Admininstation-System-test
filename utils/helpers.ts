@@ -1,4 +1,4 @@
-export function nowJST() {
+export function nowJST(): string {
   const now = new Date();
   return now.toLocaleString('ja-JP', {
     timeZone: 'Asia/Tokyo',
@@ -8,6 +8,6 @@ export function nowJST() {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false
+    hour12: false,
   });
 }
