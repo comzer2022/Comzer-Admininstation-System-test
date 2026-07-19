@@ -2,22 +2,23 @@ import { sendToWebhook } from './webhook.js';
 import { filterAndFormat, shouldExclude, cleanText } from './filters.js';
 
 // 元の console.log / console.error を保存
-export const originalLog = console.log;
-export const originalError = console.error;
+export const originalLog: typeof console.log = console.log;
+export const originalError: typeof console.error = console.error;
 
 // 文字列に変換
-function errorToString(error) {
+function errorToString(error: Error): string {
   return error.stack || error.message;
 }
 
-function objectToString(obj) {
+function objectToString(obj: object): string {
   try {
     return JSON.stringify(obj, null, 2);
   } catch {
     return String(obj);
   }
 }
-function argToString(arg) {
+
+function argToString(arg: unknown): string {
   if (arg instanceof Error) {
     return errorToString(arg);
   }
@@ -28,8 +29,8 @@ function argToString(arg) {
 }
 
 // フック
-export function hookConsoleLog() {
-  console.log = (...args) => {
+export function hookConsoleLog(): void {
+  console.log = (...args: unknown[]): void => {
     originalLog(...args);
 
     // フィルタリングして送信
@@ -39,8 +40,9 @@ export function hookConsoleLog() {
     }
   };
 }
-export function hookConsoleError() {
-  console.error = (...args) => {
+
+export function hookConsoleError(): void {
+  console.error = (...args: unknown[]): void => {
     originalError(...args);
     const raw = args.map(argToString).join('\n');
     // フィルタリングして送信
@@ -52,7 +54,8 @@ export function hookConsoleError() {
     }
   };
 }
-export function initializeHooks() {
+
+export function initializeHooks(): void {
   hookConsoleLog();
   hookConsoleError();
 }
