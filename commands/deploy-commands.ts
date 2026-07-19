@@ -1,25 +1,22 @@
 import { REST, Routes } from 'discord.js';
 import config from '../config/config.json' with { type: 'json' };
-import { data as rolepost }         from './embedPost.js';
-import { data as status }           from './status.js';
-import { data as shutdown }         from './shutdown.js';
-import { data as start }            from './start.js';
-import { data as info }             from './info.js';
-import { data as debug }            from './debug.js';
-import { data as deleteRolepost }   from './deleteRolepost.js';
-import { data as deploy }           from './deploy.js';
+import { data as rolepost } from './embedPost.js';
+import { data as status } from './status.js';
+import { data as shutdown } from './shutdown.js';
+import { data as start } from './start.js';
+import { data as info } from './info.js';
+import { data as debug } from './debug.js';
+import { data as deleteRolepost } from './deleteRolepost.js';
+import { data as deploy } from './deploy.js';
 import { commands as blacklistCommands } from './blacklist/index.js';
 
-const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN as string);
 const { clientId } = config;
 
 (async () => {
   try {
     // 一旦空にする
-    await rest.put(
-      Routes.applicationCommands(clientId),
-      { body: [] }
-    );
+    await rest.put(Routes.applicationCommands(clientId), { body: [] });
 
     // グローバルコマンド登録
     const globalBody = [
@@ -31,16 +28,14 @@ const { clientId } = config;
       debug.toJSON(),
       deleteRolepost.toJSON(),
       deploy.toJSON(),
-      ...blacklistCommands.map(c => c.toJSON()),
+      ...blacklistCommands.map((c) => c.toJSON()),
     ];
 
     console.log(`🔄 グローバルコマンドを登録中…`);
-    const registered = await rest.put(
-      Routes.applicationCommands(clientId),
-      { body: globalBody }
-    );
+    const registered = (await rest.put(Routes.applicationCommands(clientId), {
+      body: globalBody,
+    })) as unknown[];
     console.log(`✅ グローバルコマンド登録完了: ${registered.length} 件`);
-
   } catch (err) {
     console.error('❌ コマンド登録エラー:', err);
   } finally {
