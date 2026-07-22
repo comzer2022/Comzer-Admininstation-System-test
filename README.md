@@ -124,55 +124,55 @@ sequenceDiagram
 
 ```
 .
-├── index.js                        # エントリーポイント。Discord クライアント初期化・Express サーバー起動
-├── prompts.js                      # GPT-4o 向けプロンプトテンプレート（申請内容の JSON 変換指示）
+├── index.ts                        # エントリーポイント。Discord クライアント初期化・Express サーバー起動
+├── prompts.ts                      # GPT-4o 向けプロンプトテンプレート（申請内容の JSON 変換指示）
 ├── package.json
 ├── config/
 │   ├── config.json                 # チャンネル ID・クライアント ID 等の静的設定
-│   └── roleConfig.js               # 役職ロール設定（Embed 名・アイコン・Webhook 名）
+│   └── roleConfig.ts ts              # 役職ロール設定（Embed 名・アイコン・Webhook 名）
 ├── commands/
-│   ├── embedPost.js                # /rolepost コマンド・役職発言モード管理
-│   ├── deleteRolepost.js           # /delete_rolepost コマンド
-│   ├── info.js                     # /info コマンド（国民登録情報表示）
-│   ├── status.js                   # /status コマンド（接続診断）
-│   ├── debug.js                    # /debug コマンド（デバッグモード切替）
-│   ├── shutdown.js                 # /shutdown コマンド（Koyeb pause）
-│   ├── start.js                    # /start コマンド（Koyeb resume）
-│   ├── deploy.js                   # /deploy コマンド（コマンド再登録）
-│   ├── deploy-commands.js          # コマンド登録スクリプト（npm run deploy で実行）
+│   ├── embedPost.                # /rolepost コマンド・役職発言モード管理
+│   ├── deleteRolepost.ts           # /delete_rolepost コマンド
+│   ├── info.ts                     # /info コマンド（国民登録情報表示）
+│   ├── status.ts                   # /status コマンド（接続診断）
+│   ├── debug.ts                    # /debug コマンド（デバッグモード切替）
+│   ├── shutdown.ts                 # /shutdown コマンド（Koyeb pause）
+│   ├── start.ts                    # /start コマンド（Koyeb resume）
+│   ├── deploy.ts                   # /deploy コマンド（コマンド再登録）
+│   ├── deploy-commands.ts          # コマンド登録スクリプト（npm run deploy で実行）
 │   └── blacklist/
-│       ├── index.js                # ブラックリストコマンドの集約・ルーティング
-│       ├── addCountry.js           # /add_country
-│       ├── removeCountry.js        # /remove_country
-│       ├── addPlayer.js            # /add_player
-│       ├── removePlayer.js         # /remove_player
-│       ├── listBlacklist.js        # /list_blacklist
-│       └── utils.js                # 権限チェック共通処理
+│       ├── index.ts                # ブラックリストコマンドの集約・ルーティング
+│       ├── addCountry.ts           # /add_country
+│       ├── removeCountry.ts        # /remove_country
+│       ├── addPlayer.ts            # /add_player
+│       ├── removePlayer.ts         # /remove_player
+│       ├── listBlacklist.ts        # /list_blacklist
+│       └── utils.ts                # 権限チェック共通処理
 ├── handlers/
-│   ├── eventhandlers.js            # ready / messageCreate / guildMemberAdd 等のイベント登録
-│   ├── interactionHandler.js       # ボタン・モーダル・セレクトメニュー・コマンド分岐処理
-│   └── messageHandler.js          # メッセージ受信・入国審査セッション開始
+│   ├── eventhandlers.ts            # ready / messageCreate / guildMemberAdd 等のイベント登録
+│   ├── interactionHandler.ts       # ボタン・モーダル・セレクトメニュー・コマンド分岐処理
+│   └── messageHandler.ts          # メッセージ受信・入国審査セッション開始
 ├── services/
-│   ├── inspectionService.js        # 入国審査コアロジック（GPT → ブラックリスト → MCID → 合流者）
-│   ├── sessionManager.js           # 審査セッション管理・タイムアウト監視
-│   ├── webhookmanager.js           # 役職発言用 Webhook の取得・キャッシュ
-│   └── notificationqueue.js        # DM 通知キュー・POST /api/notify エンドポイント
+│   ├── inspectionService.ts        # 入国審査コアロジック（GPT → ブラックリスト → MCID → 合流者）
+│   ├── sessionManager.ts           # 審査セッション管理・タイムアウト監視
+│   ├── webhookmanager.ts           # 役職発言用 Webhook の取得・キャッシュ
+│   └── notificationqueue.ts        # DM 通知キュー・POST /api/notify エンドポイント
 ├── citizen_data/
-│   ├── czrApi.js                   # czr-bridge API クライアント（HMAC 署名付き）
-│   └── syncMembers.js              # Discord メンバー → WordPress への同期処理
+│   ├── czrApi.ts                   # czr-bridge API クライアント（HMAC 署名付き）
+│   └── syncMembers.ts              # Discord メンバー → WordPress への同期処理
 ├── utils/
-│   ├── blacklistManager.js         # Google スプレッドシートとの CRUD 操作
-│   ├── helpers.js                  # nowJST() など共通ユーティリティ
+│   ├── blacklistManager.ts         # Google スプレッドシートとの CRUD 操作
+│   ├── helpers.ts                  # nowJST() など共通ユーティリティ
 │   └── logger/
-│       ├── index.js                # ロガー初期化・エクスポート
-│       ├── hooks.js                # console.log / error のフック
-│       ├── filters.js              # ログフィルタリング（機密情報の除外など）
-│       ├── messageLog.js           # メッセージログ・デバッグログ出力
+│       ├── index.ts                # ロガー初期化・エクスポート
+│       ├── hooks.ts                # console.log / error のフック
+│       ├── filters.ts              # ログフィルタリング（機密情報の除外など）
+│       ├── messageLog.ts           # メッセージログ・デバッグログ出力
 │       └── webhook.js              # Discord Webhook へのログ送信
 ├── lib/
-│   └── sleep.js                    # sleep ユーティリティ
+│   └── sleep.ts                    # sleep ユーティリティ
 └── scripts/
-    └── test-upsert.js              # czr-bridge の upsert 動作確認スクリプト
+    └── test-upsert.ts              # czr-bridge の upsert 動作確認スクリプト
 ```
 
 ---
