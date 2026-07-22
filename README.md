@@ -124,14 +124,21 @@ sequenceDiagram
 
 ```
 .
+.
 ├── index.ts                        # エントリーポイント。Discord クライアント初期化・Express サーバー起動
 ├── prompts.ts                      # GPT-4o 向けプロンプトテンプレート（申請内容の JSON 変換指示）
 ├── package.json
+├── tsconfig.json
 ├── config/
 │   ├── config.json                 # チャンネル ID・クライアント ID 等の静的設定
-│   └── roleConfig.ts ts              # 役職ロール設定（Embed 名・アイコン・Webhook 名）
+│   ├── config.d.ts                 # config.json の型定義
+│   └── roleConfig.ts               # 役職ロール設定（Embed 名・アイコン・Webhook 名）
+├── types/
+│   ├── domain.ts                   # Session / ParsedApplication 等の共有ドメイン型
+│   ├── commands.ts                 # SlashCommandLike / BotCommand の型
+│   └── discord-augment.d.ts        # discord.js の Client 型を拡張（ROLE_CONFIG, commands）
 ├── commands/
-│   ├── embedPost.                # /rolepost コマンド・役職発言モード管理
+│   ├── embedPost.ts                # /rolepost コマンド・役職発言モード管理
 │   ├── deleteRolepost.ts           # /delete_rolepost コマンド
 │   ├── info.ts                     # /info コマンド（国民登録情報表示）
 │   ├── status.ts                   # /status コマンド（接続診断）
@@ -151,7 +158,7 @@ sequenceDiagram
 ├── handlers/
 │   ├── eventhandlers.ts            # ready / messageCreate / guildMemberAdd 等のイベント登録
 │   ├── interactionHandler.ts       # ボタン・モーダル・セレクトメニュー・コマンド分岐処理
-│   └── messageHandler.ts          # メッセージ受信・入国審査セッション開始
+│   └── messageHandler.ts           # メッセージ受信・入国審査セッション開始
 ├── services/
 │   ├── inspectionService.ts        # 入国審査コアロジック（GPT → ブラックリスト → MCID → 合流者）
 │   ├── sessionManager.ts           # 審査セッション管理・タイムアウト監視
@@ -168,7 +175,7 @@ sequenceDiagram
 │       ├── hooks.ts                # console.log / error のフック
 │       ├── filters.ts              # ログフィルタリング（機密情報の除外など）
 │       ├── messageLog.ts           # メッセージログ・デバッグログ出力
-│       └── webhook.js              # Discord Webhook へのログ送信
+│       └── webhook.ts              # Discord Webhook へのログ送信
 ├── lib/
 │   └── sleep.ts                    # sleep ユーティリティ
 └── scripts/
