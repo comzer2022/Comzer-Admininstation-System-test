@@ -125,28 +125,28 @@ sequenceDiagram
 ```
 .
 .
-├── index.ts                        # エントリーポイント。Discord クライアント初期化・Express サーバー起動
-├── prompts.ts                      # GPT-4o 向けプロンプトテンプレート（申請内容の JSON 変換指示）
+├── index.ts                        # エントリーポイント。Discordクライアント初期化・Expressサーバー起動
+├── prompts.ts                      # GPT-4o向けプロンプトテンプレート
 ├── package.json
 ├── tsconfig.json
 ├── config/
-│   ├── config.json                 # チャンネル ID・クライアント ID 等の静的設定
-│   ├── config.d.ts                 # config.json の型定義
-│   └── roleConfig.ts               # 役職ロール設定（Embed 名・アイコン・Webhook 名）
+│   ├── config.json                 # チャンネルID・クライアントID等の静的設定
+│   ├── config.d.ts                 # config.jsonの型定義
+│   └── roleConfig.ts               # 役職ロール設定
 ├── types/
-│   ├── domain.ts                   # Session / ParsedApplication 等の共有ドメイン型
-│   ├── commands.ts                 # SlashCommandLike / BotCommand の型
-│   └── discord-augment.d.ts        # discord.js の Client 型を拡張（ROLE_CONFIG, commands）
+│   ├── domain.ts                   # Session/ParsedApplication等の共有ドメイン型
+│   ├── commands.ts                 # SlashCommandLike/BotCommandの型
+│   └── discord-augment.d.ts        # discord.jsのClient型を拡張
 ├── commands/
 │   ├── embedPost.ts                # /rolepost コマンド・役職発言モード管理
 │   ├── deleteRolepost.ts           # /delete_rolepost コマンド
-│   ├── info.ts                     # /info コマンド（国民登録情報表示）
-│   ├── status.ts                   # /status コマンド（接続診断）
-│   ├── debug.ts                    # /debug コマンド（デバッグモード切替）
-│   ├── shutdown.ts                 # /shutdown コマンド（Koyeb pause）
-│   ├── start.ts                    # /start コマンド（Koyeb resume）
-│   ├── deploy.ts                   # /deploy コマンド（コマンド再登録）
-│   ├── deploy-commands.ts          # コマンド登録スクリプト（npm run deploy で実行）
+│   ├── info.ts                     # /info コマンド
+│   ├── status.ts                   # /status コマンド
+│   ├── debug.ts                    # /debug コマンド
+│   ├── shutdown.ts                 # /shutdown コマンド
+│   ├── start.ts                    # /start コマンド
+│   ├── deploy.ts                   # /deploy コマンド
+│   ├── deploy-commands.ts          # コマンド登録スクリプト
 │   └── blacklist/
 │       ├── index.ts                # ブラックリストコマンドの集約・ルーティング
 │       ├── addCountry.ts           # /add_country
@@ -156,30 +156,30 @@ sequenceDiagram
 │       ├── listBlacklist.ts        # /list_blacklist
 │       └── utils.ts                # 権限チェック共通処理
 ├── handlers/
-│   ├── eventhandlers.ts            # ready / messageCreate / guildMemberAdd 等のイベント登録
+│   ├── eventhandlers.ts            # イベント登録
 │   ├── interactionHandler.ts       # ボタン・モーダル・セレクトメニュー・コマンド分岐処理
 │   └── messageHandler.ts           # メッセージ受信・入国審査セッション開始
 ├── services/
-│   ├── inspectionService.ts        # 入国審査コアロジック（GPT → ブラックリスト → MCID → 合流者）
+│   ├── inspectionService.ts        # 入国審査コアロジック
 │   ├── sessionManager.ts           # 審査セッション管理・タイムアウト監視
 │   ├── webhookmanager.ts           # 役職発言用 Webhook の取得・キャッシュ
-│   └── notificationqueue.ts        # DM 通知キュー・POST /api/notify エンドポイント
+│   └── notificationqueue.ts        # DM 通知キュー・POST/api/notifyエンドポイント
 ├── citizen_data/
-│   ├── czrApi.ts                   # czr-bridge API クライアント（HMAC 署名付き）
-│   └── syncMembers.ts              # Discord メンバー → WordPress への同期処理
+│   ├── czrApi.ts                   # czr-bridgeAPIクライアント
+│   └── syncMembers.ts              # WordPressへの同期処理
 ├── utils/
-│   ├── blacklistManager.ts         # Google スプレッドシートとの CRUD 操作
-│   ├── helpers.ts                  # nowJST() など共通ユーティリティ
+│   ├── blacklistManager.ts         # GoogleスプレッドシートへのCRUD操作
+│   ├── helpers.ts                  # 共通ユーティリティ
 │   └── logger/
 │       ├── index.ts                # ロガー初期化・エクスポート
-│       ├── hooks.ts                # console.log / error のフック
-│       ├── filters.ts              # ログフィルタリング（機密情報の除外など）
+│       ├── hooks.ts                # console.log/errorのフック
+│       ├── filters.ts              # ログフィルタリング
 │       ├── messageLog.ts           # メッセージログ・デバッグログ出力
 │       └── webhook.ts              # Discord Webhook へのログ送信
 ├── lib/
-│   └── sleep.ts                    # sleep ユーティリティ
+│   └── sleep.ts                    # sleepユーティリティ
 └── scripts/
-    └── test-upsert.ts              # czr-bridge の upsert 動作確認スクリプト
+    └── test-upsert.ts              # czr-bridgeのupser 動作確認スクリプト
 ```
 
 ---
