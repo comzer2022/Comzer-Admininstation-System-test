@@ -182,10 +182,10 @@ sequenceDiagram
     └── test-upsert.ts              # czr-bridgeのupser 動作確認スクリプト
 ```
 
----
-
 ## 主要依存パッケージ
-
+ 
+### dependencies（本番実行時に必要）
+ 
 | パッケージ | 用途 |
 |---|---|
 | `discord.js` v14 | Discord API クライアント・スラッシュコマンド・Webhook 管理 |
@@ -196,10 +196,16 @@ sequenceDiagram
 | `express` v5 | `/api/notify` 等の REST API エンドポイント提供 |
 | `body-parser` | POST リクエストの JSON パース |
 | `node-fetch` | czr-bridge API へのリクエスト（ESM 環境） |
+ 
+### devDependencies（TypeScript化に伴い追加、ビルド時のみ必要）
+ 
+| パッケージ | 用途 |
+|---|---|
+| `typescript` | `.ts` → `.js` へのコンパイル（`tsc`） |
+| `@types/node` | Node.js組み込みAPI（`process`, `Buffer`, `https`等）の型定義 |
+| `@types/express` | Express の `Request` / `Response` 等の型定義 |
 
 バージョン詳細は `package.json` を参照してください。
-
----
 
 ## セットアップ
 
