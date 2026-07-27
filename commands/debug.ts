@@ -1,7 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-
 export let isDebugMode = false;
-
 const ALLOWED_DEBUG_ROLE_IDS: string[] = [
   '1269977566744416266',
   '1188425695043534848',
@@ -20,7 +18,6 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<unknown> {
-  // 実行者が許可されたロールを少なくとも1つ持っているか確認
   const member = interaction.member;
   const hasPermission =
     member && 'cache' in member.roles
@@ -33,13 +30,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     });
   }
 
-  // 選択肢に基づいて true / false を設定
   const choice = interaction.options.getString('mode');
   isDebugMode = choice === 'on';
-
   const statusText = isDebugMode ? 'ON' : 'OFF';
-
-  // 結果を返信
   await interaction.reply({
     content: `行政システムのデバッグモードを **${statusText}** に設定しました。`,
     ephemeral: true,
