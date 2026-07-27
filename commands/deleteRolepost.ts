@@ -27,13 +27,6 @@ function getRoleIdsByMode(mode: Mode): string[] {
   return (process.env[group.envKey] || '').split(',').map((s) => s.trim()).filter(Boolean);
 }
 
-/**
- * Embed の author.name（= ROLE_GROUPS.label と同一の固定文字列）から直接 mode を判定する。
- * ROLE_CONFIG は roleId をキーに DIPLOMAT → MINISTER → EXAMINER の順で上書きされるため、
- * 同一ロールIDが複数カテゴリに重複設定されていると embedName が失われることがある
- * （＝ 役職発言なのに「役職発言ではない」と誤判定される不具合の原因）。
- * ROLE_CONFIG を経由せず label と直接突き合わせることでこの上書き問題を回避する。
- */
 function getModeFromEmbedName(authorName: string): Mode | null {
   const group = ROLE_GROUPS.find((g) => g.label === authorName);
   return group ? group.mode : null;
@@ -42,7 +35,6 @@ function getModeFromEmbedName(authorName: string): Mode | null {
 export async function execute(interaction: ChatInputCommandInteraction): Promise<unknown> {
   // ロールID取得
   let userRoleIds: string[] = [];
-
   if (interaction.guildId) {
     const member = interaction.member;
     userRoleIds =
@@ -59,7 +51,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     (process.env[envKey] || '').split(',').map((s) => s.trim()).filter(Boolean)
   );
   const hasPermission = allAllowedIds.some((id) => userRoleIds.includes(id));
-
   if (!hasPermission) {
     console.trace('権限エラー: delete_rolepost');
     if (!interaction.replied && !interaction.deferred) {
@@ -73,14 +64,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   }
 
   await interaction.deferReply({ ephemeral: true });
-
   const messageId = interaction.options.getString('message_id', true);
   const channel = interaction.channel;
 
   if (!channel || !('messages' in channel)) {
     return interaction.editReply({ content: 'このチャンネルではメッセージを取得できません。' });
   }
-
   try {
     const msg = await channel.messages.fetch(messageId);
 
@@ -98,8 +87,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         content: 'このメッセージは役職発言ではないようです。',
       });
     }
-
-    // Embed の author.name から直接モード判定（ROLE_CONFIG のキー上書き問題を回避）
     const mode = getModeFromEmbedName(authorName);
     if (!mode) {
       return await interaction.editReply({
