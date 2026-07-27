@@ -63,7 +63,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       );
     }
 
-    // Embed（埋め込み）形式で綺麗に整える
+    // Embed形式にする
     const infoEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle('👤 国民登録情報')
