@@ -60,7 +60,7 @@ async function handleRolepostMessage(message: Message, _client: Client): Promise
   const mode = stored.slice(0, colonIdx) as RolepostMode;
   const roleId = stored.slice(colonIdx + 1);
 
-  // mode から直接 cfg を決定（ROLE_CONFIG のキー上書き問題を完全回避）
+  // modeからcfgを決定
   const modeToCfgKey: Record<RolepostMode, string> = {
     minister: 'ROLLID_MINISTER',
     diplomat: 'ROLLID_DIPLOMAT',
@@ -69,7 +69,6 @@ async function handleRolepostMessage(message: Message, _client: Client): Promise
   const envKey = modeToCfgKey[mode];
   if (!envKey) return;
 
-  // roleConfig.js と同じ cfg を mode ベースで直接構築
   const DIPLOMAT_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/5dwbifgYfsdWpZx/preview';
   const MINISTER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/qGWt4rftd9ygKdi/preview';
   const EXAMINER_ICON_URL = 'https://www.comzer-gov.net/database/index.php/s/NEsrzngYJEHZwTn/preview';
