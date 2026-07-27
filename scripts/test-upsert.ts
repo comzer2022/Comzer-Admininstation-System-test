@@ -6,7 +6,7 @@ if (!id) {
   process.exit(1);
 }
 
-// テスト用途のため discord_name / display_name は意図的に省略（元のJSと同じ挙動）
+// テスト用途のため discord_name / display_name は省略
 const payload = {
   guild_id: process.env.CZR_GUILD_ID || '1188411576483590194',
   discord_id: id,
