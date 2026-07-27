@@ -11,7 +11,7 @@ type WebhookCapableChannel =
   | StageChannel
   | VoiceChannel;
 
-/** キャッシュされるフック（既存の場合はWebhookClient、新規作成の場合はWebhook） */
+/** キャッシュされるフック */
 type CachedHook = WebhookClient | Webhook;
 
 const webhooks = new Map<string, CachedHook>();
