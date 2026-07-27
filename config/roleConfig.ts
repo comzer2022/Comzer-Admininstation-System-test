@@ -4,9 +4,7 @@ export interface RoleConfigEntry {
   webhookName: string;
   webhookIcon: string;
   canDelete: string[];
-  /** embedNameのエイリアス（後方互換のため付与） */
   name?: string;
-  /** embedIconのエイリアス（後方互換のため付与） */
   icon?: string;
 }
 
