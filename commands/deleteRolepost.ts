@@ -27,12 +27,16 @@ function getRoleIdsByMode(mode: Mode): string[] {
   return (process.env[group.envKey] || '').split(',').map((s) => s.trim()).filter(Boolean);
 }
 
-function getModeFromRoleId(roleId: string): Mode | null {
-  for (const { envKey, mode } of ROLE_GROUPS) {
-    const ids = (process.env[envKey] || '').split(',').map((s) => s.trim()).filter(Boolean);
-    if (ids.includes(roleId)) return mode;
-  }
-  return null;
+/**
+ * Embed の author.name（= ROLE_GROUPS.label と同一の固定文字列）から直接 mode を判定する。
+ * ROLE_CONFIG は roleId をキーに DIPLOMAT → MINISTER → EXAMINER の順で上書きされるため、
+ * 同一ロールIDが複数カテゴリに重複設定されていると embedName が失われることがある
+ * （＝ 役職発言なのに「役職発言ではない」と誤判定される不具合の原因）。
+ * ROLE_CONFIG を経由せず label と直接突き合わせることでこの上書き問題を回避する。
+ */
+function getModeFromEmbedName(authorName: string): Mode | null {
+  const group = ROLE_GROUPS.find((g) => g.label === authorName);
+  return group ? group.mode : null;
 }
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<unknown> {
@@ -72,7 +76,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
   const messageId = interaction.options.getString('message_id', true);
   const channel = interaction.channel;
-  const ROLE_CONFIG = interaction.client.ROLE_CONFIG || {};
 
   if (!channel || !('messages' in channel)) {
     return interaction.editReply({ content: 'このチャンネルではメッセージを取得できません。' });
@@ -96,21 +99,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
       });
     }
 
-    const roleIdOfEmbed = Object.entries(ROLE_CONFIG).find(
-      ([, cfg]) => cfg.embedName === authorName
-    )?.[0];
-
-    if (!roleIdOfEmbed) {
-      return await interaction.editReply({
-        content: 'このメッセージは役職発言ではないようです。',
-      });
-    }
-
-    // Embed の roleId からモード判定
-    const mode = getModeFromRoleId(roleIdOfEmbed);
+    // Embed の author.name から直接モード判定（ROLE_CONFIG のキー上書き問題を回避）
+    const mode = getModeFromEmbedName(authorName);
     if (!mode) {
       return await interaction.editReply({
-        content: 'この発言のモードが特定できません。',
+        content: 'このメッセージは役職発言ではないようです。',
       });
     }
 
