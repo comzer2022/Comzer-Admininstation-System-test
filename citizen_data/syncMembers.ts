@@ -4,7 +4,6 @@ import { upsertMember, deleteAbsentMembers, UpsertMemberResponse } from './czrAp
 const GUILD_ID = '1188411576483590194';
 const ROLE_DIPLOMAT = '1188429176739479562';
 
-// fullSync 中に fetch に失敗したメンバーを除外するため、
 // 実際に同期できた discord_id だけを追跡する
 const MIN_SYNCED_THRESHOLD = 10; // この件数未満なら削除ステップをスキップ（誤削除防止）
 
@@ -14,7 +13,6 @@ export function inferGroupFromRoles(roleIds: string[]): 'diplomat' | 'citizen' {
 }
 
 export async function syncMember(m: GuildMember): Promise<UpsertMemberResponse | null> {
-  // user が取れていない partial メンバーは強制的に fetch
   const user = m.user ?? (await m.fetch().then((fm) => fm.user));
 
   if (!user?.username) {
@@ -40,7 +38,6 @@ export async function syncMember(m: GuildMember): Promise<UpsertMemberResponse |
 
 export async function fullSync(client: Client, throttleMs = 1000): Promise<void> {
   const g = await client.guilds.fetch(GUILD_ID);
-  // limit なしで fetch → Discord.js が自動でチャンク分割して全件取得
   const members = await g.members.fetch();
   // 今回サーバーに実際に存在し、同期成功した discord_id を記録する
   const syncedIds = new Set<string>();
@@ -49,13 +46,11 @@ export async function fullSync(client: Client, throttleMs = 1000): Promise<void>
     try {
       const res = await syncMember(m);
       if (res !== null) {
-        // syncMember が null を返した場合は username 欠落などで実際には送れていないためスキップ
         syncedIds.add(m.id);
       }
     } catch (e) {
       console.error(m.id, 'failed:', e instanceof Error ? e.message : e);
       // 失敗したメンバーは syncedIds に追加しない
-      // → 一時的なエラーでも削除対象にならないよう保守的に扱う
     }
     const jitter = Math.floor(Math.random() * 250);
     await new Promise((r) => setTimeout(r, throttleMs + jitter));
@@ -68,11 +63,6 @@ export async function fullSync(client: Client, throttleMs = 1000): Promise<void>
 
   console.log('[fullSync] Completed.');
 }
-
-/**
- * サーバーに存在しない（= syncedIds に含まれない）メンバーを DB から削除し、
- * 削除されたメンバーの一覧を Discord Webhook でログに送信する。
- */
 async function purgeAbsentMembers(syncedIds: Set<string>): Promise<void> {
   if (syncedIds.size < MIN_SYNCED_THRESHOLD) {
     console.warn(
