@@ -15,7 +15,7 @@ interface StatusReport {
   errorCode: string | number | null;
 }
 
-/** Discord APIエラーの最小限の形（discord.js DiscordAPIErrorを想定） */
+/** Discord APIエラーの最小限の形*/
 interface DiscordApiErrorLike {
   code?: string | number;
   message: string;
@@ -83,7 +83,7 @@ async function processQueue(client: Client): Promise<void> {
   processing = false;
 }
 
-/** /api/notify エンドポイントで受け取る想定のペイロード（外部システム由来のため緩やかな型） */
+/** /api/notify エンドポイントで受け取る想定のペイロード */
 interface NotifyRequestBody {
   discord_id?: string;
   discordId?: string;
