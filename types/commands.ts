@@ -1,6 +1,6 @@
 import type { ChatInputCommandInteraction } from 'discord.js';
 
-/** SlashCommandBuilder系オブジェクトが最低限持つべき形（.name と .toJSON()） */
+/** SlashCommandBuilder系オブジェクトが最低限持つべき形 */
 export interface SlashCommandLike {
   name: string;
   toJSON(): unknown;
