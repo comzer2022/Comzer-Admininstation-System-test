@@ -1,7 +1,6 @@
 # Comzer-Administration-System
 コムザール行政システム（Comzer Administration System）
 **Discord 自動入国審査 BOT + ブラックリスト管理 + 役職発言 + 国民データ連携**
-
 ---
 
 ## 目次
