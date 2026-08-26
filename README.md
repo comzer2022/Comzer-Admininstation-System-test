@@ -48,7 +48,7 @@
 ```mermaid
 graph TD
   User[申請者_Discordユーザー]
-  Ticket[Discord_Ticketチャンネル_ID:CAS]
+  Ticket[Discord_Ticketチャンネル_ID:CASTEST]
   StartFlow[申請フロー開始]
   Version[ゲーム版選択_Java/BE]
   Input1[MCID入力]
@@ -126,7 +126,7 @@ sequenceDiagram
 ## ファイル構成
 
 レイヤー最優先（`domain / application / infrastructure / presentation`）構成です。
-各クラスはコンストラクタインジェクションで依存を受け取り、`index.ts`が唯一の組み立て場所（コンポジションルート）になっています。
+各クラスはコンストラクタインジェクションで依存を受け取り、`index.ts`（ルート直下）が唯一の組み立て場所（コンポジションルート）になっています。
 
 ```
 .
@@ -188,12 +188,15 @@ sequenceDiagram
 │   │       ├── BotConfig.ts            # 環境変数の一元管理
 │   │       ├── RoleConfig.ts           # 役職ロール設定(旧 roleConfig.ts)
 │   │       ├── AppConfigLoader.ts      # config.json のロード
+│   │       ├── AppConfig.d.ts          # config.json の型定義
 │   │       └── config.json             # チャンネルID・クライアントID等の静的設定
 │   │
 │   ├── presentation/
 │   │   ├── discord/
 │   │   │   ├── commands/               # 各スラッシュコマンド + CommandRegistry
 │   │   │   │   ├── CommandRegistry.ts
+│   │   │   │   ├── BotCommand.ts            # コマンド共通インターフェース
+│   │   │   │   ├── discord-augment.d.ts     # discord.js Client の型拡張(ROLE_CONFIG/commands)
 │   │   │   │   ├── RolepostCommand.ts       # /rolepost
 │   │   │   │   ├── DeleteRolepostCommand.ts # /delete_rolepost
 │   │   │   │   ├── InfoCommand.ts           # /info
@@ -387,7 +390,7 @@ node dist/index.js
 Ticket ツールが作成したカテゴリチャンネル（`TICKET_CAT`）内のメッセージで、以下の条件をすべて満たすと審査セッションが開始されます。
 
 - Bot がメンションされている
-- メッセージ本文に `ID:CAS` が含まれている
+- メッセージ本文に `ID:CASTEST` が含まれている（正規表現 `/ID:CASTEST/` によるチェック。テスト用の固定文字列であり、本番運用時は変更が必要な場合があります）
 
 ### セッションの流れ
 
@@ -506,8 +509,10 @@ Discord サーバーのメンバー情報を定期的に WordPress の czr-bridg
 
 | グループ | 条件 |
 |---|---|
-| `diplomat` | `ROLLID_DIPLOMAT` に含まれるロールを所持 |
+| `diplomat` | 外交官ロール（`RoleGroupClassifier.ts` 内にハードコードされたロール ID）を所持 |
 | `citizen` | それ以外 |
+
+> **Note:** このグループ分類は `ROLLID_DIPLOMAT` 環境変数ではなく、`src/domain/service/RoleGroupClassifier.ts` に直接記述されたロール ID (`1188429176739479562`) で判定されます。`ROLLID_DIPLOMAT` は rolepost 機能（`RoleConfig.ts`）専用の環境変数であり、この同期処理には影響しません。サーバーを変更・複製する場合は本ファイルの定数を直接書き換える必要があります。
 
 API 通信は HMAC-SHA256 署名付きで行われ、レート制限に対して指数バックオフ付きリトライ（最大 5 回）を実装しています。
 
