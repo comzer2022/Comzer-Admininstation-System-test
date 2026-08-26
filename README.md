@@ -2,9 +2,6 @@
 コムザール行政システム（Comzer Administration System）
 **Discord 自動入国審査 BOT + ブラックリスト管理 + 役職発言 + 国民データ連携**
 
-> このリポジトリは、レイヤー構成（`domain / application / infrastructure / presentation`）+ DI に
-> リファクタリングされたバージョンです。機能・挙動は元のバージョンと同一です。
-
 ---
 
 ## 目次
