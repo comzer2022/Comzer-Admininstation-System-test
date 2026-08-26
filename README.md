@@ -2,6 +2,9 @@
 コムザール行政システム（Comzer Administration System）
 **Discord 自動入国審査 BOT + ブラックリスト管理 + 役職発言 + 国民データ連携**
 
+> このリポジトリは、レイヤー構成（`domain / application / infrastructure / presentation`）+ DI に
+> リファクタリングされたバージョンです。機能・挙動は元のバージョンと同一です。
+
 ---
 
 ## 目次
@@ -12,7 +15,6 @@
 - [ファイル構成](#ファイル構成)
 - [主要依存パッケージ](#主要依存パッケージ)
 - [セットアップ](#セットアップ)
-- [Dockerでのセットアップ](#dockerでのセットアップ)
 - [環境変数](#環境変数)
 - [スラッシュコマンド一覧](#スラッシュコマンド一覧)
 - [申請〜審査プロセス詳細](#申請審査プロセス詳細)
@@ -123,15 +125,15 @@ sequenceDiagram
 
 ## ファイル構成
 
-各クラスはコンストラクタインジェクションで依存を受け取り、`src/index.ts` が唯一の組み立て場所（コンポジションルート）になっています。
+レイヤー最優先（`domain / application / infrastructure / presentation`）構成です。
+各クラスはコンストラクタインジェクションで依存を受け取り、`index.ts`が唯一の組み立て場所（コンポジションルート）になっています。
 
 ```
 .
+│                                        # (Discordクライアント初期化・Expressサーバー起動・DI配線)
 ├── src/
-│   ├── index.ts                        # エントリーポイント兼コンポジションルート
-│   │                                    # (Discordクライアント初期化・Expressサーバー起動・DI配線)
-│   │
-│   ├── domain/                         # 外部依存のないロジック
+|   ├── index.ts                        # エントリーポイント兼コンポジションルート
+│   ├── domain/                         # 外部依存のない純粋ロジック
 │   │   ├── model/
 │   │   │   ├── Session.ts              # 審査セッションの型
 │   │   │   └── ParsedApplication.ts    # GPT解析結果・審査結果の型
@@ -143,15 +145,15 @@ sequenceDiagram
 │   │
 │   ├── application/                    # ユースケース層
 │   │   ├── inspection/
-│   │   │   └── InspectionOrchestrator.ts   # 審査コアロジック
+│   │   │   └── InspectionOrchestrator.ts   # 審査コアロジック(旧 inspectionService.ts)
 │   │   ├── session/
-│   │   │   └── SessionLifecycleService.ts  # セッション管理・タイムアウト監視
+│   │   │   └── SessionLifecycleService.ts  # セッション管理・タイムアウト監視(旧 sessionManager.ts)
 │   │   ├── blacklist/
 │   │   │   └── BlacklistManagementService.ts # 追加/削除/一覧・権限チェック
 │   │   ├── rolepost/
 │   │   │   └── RolePostService.ts      # 役職発言モードの状態管理・Embed生成
 │   │   ├── citizenSync/
-│   │   │   └── MemberSyncService.ts    # WordPressへの同期処理
+│   │   │   └── MemberSyncService.ts    # WordPressへの同期処理(旧 syncMembers.ts)
 │   │   ├── notification/
 │   │   │   └── NotificationQueueService.ts # DM通知キュー・順次送信
 │   │   └── ops/
@@ -162,14 +164,14 @@ sequenceDiagram
 │   ├── infrastructure/                 # 外部システムクライアント
 │   │   ├── openai/
 │   │   │   ├── GptExtractionClient.ts  # OpenAI呼び出し
-│   │   │   └── extractionPrompt.ts     # プロンプトテンプレート
+│   │   │   └── extractionPrompt.ts     # プロンプトテンプレート(旧 prompts.ts)
 │   │   ├── minecraft/
 │   │   │   ├── MojangClient.ts         # Java版MCID確認
 │   │   │   └── PlayerDbClient.ts       # Bedrock版MCID確認
 │   │   ├── sheets/
-│   │   │   └── BlacklistRepository.ts  # GoogleスプレッドシートCRUD
+│   │   │   └── BlacklistRepository.ts  # Googleスプレッドシート CRUD(旧 blacklistManager.ts)
 │   │   ├── czrBridge/
-│   │   │   ├── CzrBridgeClient.ts      # 国民名簿API
+│   │   │   ├── CzrBridgeClient.ts      # 国民名簿API(HMAC署名、旧 czrApi.ts)
 │   │   │   ├── JoinerMatchClient.ts    # 合流者照合API
 │   │   │   └── CitizenInfoClient.ts    # /info コマンド用の国民情報取得API
 │   │   ├── discord/
@@ -184,7 +186,7 @@ sequenceDiagram
 │   │   │   └── nowJST.ts               # JST時刻文字列ヘルパー
 │   │   └── config/
 │   │       ├── BotConfig.ts            # 環境変数の一元管理
-│   │       ├── RoleConfig.ts           # 役職ロール設定
+│   │       ├── RoleConfig.ts           # 役職ロール設定(旧 roleConfig.ts)
 │   │       ├── AppConfigLoader.ts      # config.json のロード
 │   │       └── config.json             # チャンネルID・クライアントID等の静的設定
 │   │
@@ -208,14 +210,14 @@ sequenceDiagram
 │   │   │   │       ├── ListBlacklistCommand.ts
 │   │   │   │       └── shared.ts            # 権限チェック共通処理
 │   │   │   ├── events/
-│   │   │   │   └── EventRegistrar.ts        # イベント登録
+│   │   │   │   └── EventRegistrar.ts        # イベント登録(旧 eventhandlers.ts)
 │   │   │   └── interactions/
 │   │   │       ├── InteractionRouter.ts     # ボタン/モーダル/セレクト/コマンドの分岐
 │   │   │       ├── ButtonInteractionHandler.ts
 │   │   │       ├── SelectMenuHandler.ts
 │   │   │       ├── ModalSubmitHandler.ts
 │   │   │       ├── JoinerResponseHandler.ts
-│   │   │       ├── MessageTriggerHandler.ts # 審査セッション開始トリガー
+│   │   │       ├── MessageTriggerHandler.ts # 審査セッション開始トリガー(旧 messageHandler.ts)
 │   │   │       └── ApplicationEmbeds.ts     # 承認/却下/公示Embed生成
 │   │   └── http/
 │   │       └── NotifyApiRoute.ts       # POST /api/notify
@@ -224,9 +226,6 @@ sequenceDiagram
 │       ├── deploy-commands.ts          # コマンド一括登録スクリプト
 │       └── test-upsert.ts              # czr-bridgeのupsert動作確認スクリプト
 │
-├── Dockerfile                          # マルチステージビルド
-├── docker-compose.yml                  # bot / deploy-commands の2サービス
-├── .dockerignore
 ├── .env.example
 ├── package.json
 └── tsconfig.json
@@ -307,27 +306,6 @@ node dist/index.js
 ```
 
 > **Note:** Node.js 20 以上が必要です。
-
----
-
-## Dockerでのセットアップ
-
-```bash
-cp .env.example .env
-docker compose build
-docker compose up -d bot
-```
-
-コマンド登録（deploy-commands）は、通常運用のコンテナ起動では自動実行されません。
-コマンド定義を追加・変更した時だけ、以下を手動実行してください。
-
-```bash
-docker compose run --rm deploy-commands
-```
-
-> `Dockerfile` のビルドステージは `npm run build` ではなく `npx tsc` を直接呼んでいます。
-> `postbuild`（Discordへのコマンド登録）はシークレットとDiscordへのネットワーク到達性を
-> ビルド時に要求してしまうため、イメージビルドからは意図的に切り離しています。
 
 ---
 
