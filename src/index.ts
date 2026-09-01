@@ -45,6 +45,8 @@ import { MessageTriggerHandler } from './presentation/discord/interactions/Messa
 import { InteractionRouter } from './presentation/discord/interactions/InteractionRouter.js';
 import { EventRegistrar } from './presentation/discord/events/EventRegistrar.js';
 import { NotifyApiRoute } from './presentation/http/NotifyApiRoute.js';
+import { HealthApiRoute } from './presentation/http/HealthApiRoute.js';
+import { HmacVerifier } from './infrastructure/http/HmacVerifier.js';
 const config = new BotConfig();
 const logSink = new DiscordWebhookLogSink(config);
 new ConsoleHooks(logSink).initialize();
@@ -90,6 +92,8 @@ const messageTrigger = new MessageTriggerHandler(rolePost, sessions, webhookMana
 const interactionRouter = new InteractionRouter(registry, rolepostCommand, selectMenuHandler, buttonHandler, modalHandler, joinerHandler);
 const eventRegistrar = new EventRegistrar(interactionRouter, messageTrigger, memberSync, sessions, selfCheck, config);
 const notifyApiRoute = new NotifyApiRoute(notificationQueue, config);
+const hmacVerifier = new HmacVerifier(config);
+const healthApiRoute = new HealthApiRoute(selfCheck, hmacVerifier);
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -105,8 +109,14 @@ client.ROLE_CONFIG = buildRoleConfig(config);
 eventRegistrar.register(client);
 sessions.startTimeoutWatcher();
 const app = express();
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+    verify: (req, _res, buf) => {
+        // HMAC検証は生のボディ文字列に対して行うため、パース前のバイト列を保持する。
+        (req as unknown as { rawBody?: string }).rawBody = buf.toString('utf8');
+    },
+}));
 notifyApiRoute.register(app, client);
+healthApiRoute.register(app);
 app.get('/', (_req, res) => res.send('OK'));
 app.listen(config.port, () => console.log(`Server listening on port ${config.port}`));
 client.once('ready', async () => {
